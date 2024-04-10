@@ -82,7 +82,9 @@ void KinanimImporter::ReadHeader(std::istream* reader)
 	while (!reader->eof())
 	{
 		READ_STREAM(reader, index);
-		
+		// char indexChr = static_cast<char>(index);
+		// reader->read(&indexChr, sizeof(index));
+
 		if (index < 0) //End header
 			break;
 
@@ -103,7 +105,7 @@ void KinanimImporter::ReadHeader(std::istream* reader)
 		case KinanimID::FIELD_ID_HASBLENDSHAPES:
 			ReadHasBlendshapes(reader);
 			break;
-#if DEBUG
+#ifdef DEBUG
 		default:
 			THROW_STR_FORMAT(EXCEPTION_UNKNOWN_ID(index), std::logic_error)
 #endif
@@ -200,9 +202,9 @@ void KinanimImporter::ReadTransform(FFrameData* frameData, std::istream* reader)
 		{
 			frameData->Transforms[i] =
 			{
-				{0,0,0},
-				{0,0,0,1},
-				{1,1,1},
+				FVector3f{0,0,0},
+				FVector4f{0,0,0,1},
+				FVector3f{1,1,1},
 				false,
 				false,
 				false,
@@ -211,9 +213,9 @@ void KinanimImporter::ReadTransform(FFrameData* frameData, std::istream* reader)
 		}
 
 		transform = {
-			{0,0,0},
-			{0,0,0,1},
-			{1,1,1},
+			FVector3f{0,0,0},
+			FVector4f{0,0,0,1},
+			FVector3f{1,1,1},
 			false,
 			false,
 			false,

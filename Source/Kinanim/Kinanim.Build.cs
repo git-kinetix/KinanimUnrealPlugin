@@ -7,6 +7,8 @@ public class Kinanim : ModuleRules
 	public Kinanim(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+
+		bEnableExceptions = true;
 		
 		PublicIncludePaths.AddRange(
 			new string[] {

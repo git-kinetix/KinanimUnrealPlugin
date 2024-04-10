@@ -63,7 +63,7 @@ const std::map<EKinanimTransform, float> LERP_ACCURACY =
 	{EKinanimTransform::KT_RightToes,     MIN_LERP_ACCURACY_FOOT},
 };
 
-const EKinanimTransform transformPriorityOrder[EKinanimTransform::KT_Count] =
+const EKinanimTransform transformPriorityOrder[static_cast<unsigned long>(EKinanimTransform::KT_Count)] =
 {
 	EKinanimTransform::KT_RightLittleDistal,
 	EKinanimTransform::KT_RightRingDistal,

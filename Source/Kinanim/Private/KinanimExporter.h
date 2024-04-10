@@ -21,7 +21,7 @@ namespace KinanimExporter
 		void WriteVersion(std::ostream* stream, unsigned short version);
 		void WriteFrameRate(std::ostream* stream, float frameRate);
 		void WriteFrameCountAndSizes(std::ostream* stream, unsigned short frameCount, unsigned short* frameSizes);
-		void WriteKeyTypes(std::ostream* stream, EKeyType keyTypes[EKinanimTransform::KT_Count]);
+		void WriteKeyTypes(std::ostream* stream, EKeyType keyTypes[static_cast<unsigned long>(EKinanimTransform::KT_Count)]);
 		void WriteHasBlendshape(std::ostream* stream, bool bHasBlendshape);
 		void WriteEndHeader(std::ostream * stream);
 	}
@@ -37,11 +37,11 @@ namespace KinanimExporter
 			 void WriteFrameId(std::ostream * stream, unsigned short i);
 			 void WriteTransformDeclarationFlag(std::ostream * stream,
 			                                    ETransformDeclarationFlag transformDeclarationFlag);
-			 void WriteTransforms(std::ostream * stream, FTransformData transforms[EKinanimTransform::KT_Count],
+			 void WriteTransforms(std::ostream * stream, FTransformData transforms[static_cast<unsigned long>(EKinanimTransform::KT_Count)],
 			                      ETransformDeclarationFlag transformDeclarationFlag);
 			 void WriteBlendshapeDeclarationFlag(std::ostream * stream,
 			                                     EBlendshapeDeclarationFlag BlendshapeDeclarationFlag);
-			 void WriteBlendshapes(std::ostream * stream, float blendshapes[EKinanimBlendshape::KB_Count],
+			 void WriteBlendshapes(std::ostream * stream, float blendshapes[static_cast<unsigned long>(EKinanimBlendshape::KB_Count)],
 			                       EBlendshapeDeclarationFlag blendshapeDeclarationFlag);
 		
 		}
