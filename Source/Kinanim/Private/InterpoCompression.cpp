@@ -13,8 +13,10 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#ifndef PLATFORM_MAC
 #define MIN(a, b) ((a<b) ? a : b)
 #define MAX(a, b) ((a>b) ? a : b)
+#endif
 
 #define DEFINE_NULLABLE_ROTATION(variableName, ...)\
 FVector4f variableName = __VA_ARGS__.Rotation;\
