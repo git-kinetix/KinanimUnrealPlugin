@@ -13,8 +13,11 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#ifndef PLATFORM_MAC
+#ifndef MIN
 #define MIN(a, b) ((a<b) ? a : b)
+#endif
+
+#ifndef MAX
 #define MAX(a, b) ((a>b) ? a : b)
 #endif
 
