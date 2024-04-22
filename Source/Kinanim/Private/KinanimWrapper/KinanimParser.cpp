@@ -7,6 +7,7 @@
 #include "KinanimWrapper.h"
 
 #include "KinanimBoneCompressionCodec.h"
+#include "KinanimBonesDataAsset.h"
 #include "KinanimCurveCompressionCodec.h"
 
 #include "Kismet/KismetSystemLibrary.h"
@@ -174,7 +175,7 @@ FTransform UKinanimParser::ToUnrealTransform(const FTransformData& TrData)
 	return ToReturn;
 }
 
-UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* SkeletalMesh, void* Stream)
+UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping)
 {
 	//Default scale and matrice
 	const float SceneScale = 100;
@@ -264,8 +265,17 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 	//Iterate on bones
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
 	{
-		//Enum to sam Bone name
-		FString TrackName = KinanimEnumToSamBone(static_cast<EKinanimTransform>(i));
+		FString TrackName;
+		if (!IsValid(InBoneMapping))
+		{
+			//Enum to sam Bone name
+			TrackName = KinanimEnumToSamBone(static_cast<EKinanimTransform>(i));
+		}
+		else
+		{
+			TrackName = InBoneMapping->GetBoneNameByIndex(static_cast<EKinanimTransform>(i));
+		}
+		
 		FName BoneName = FName(TrackName);
 
 		FRawAnimSequenceTrack Track = FRawAnimSequenceTrack();
@@ -281,6 +291,11 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 			continue;
 		}
 
+		UKismetSystemLibrary::PrintString(SkeletalMesh,
+										  FString::Printf(TEXT("Found bone '%s' (index: %i)"),
+														  *BoneName.ToString(), BoneIndex), true,
+										  true, FLinearColor::Green);
+		
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];
 

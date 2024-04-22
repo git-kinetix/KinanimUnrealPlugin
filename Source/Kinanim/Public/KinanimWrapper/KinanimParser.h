@@ -22,6 +22,6 @@ public:
 	static FTransform ToUnrealTransform(const FTransformData& TrData);
 
 	static UAnimSequence* LoadSkeletalAnimationFromStream(
-		USkeletalMesh* SkeletalMesh, void* Stream);
+		USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping);
 	
 };
