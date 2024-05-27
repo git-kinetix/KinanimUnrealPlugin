@@ -2,6 +2,7 @@
 
 #include "KinanimWrapper/KinanimParser.h"
 
+#include "InterpoCompression.h"
 #include "KinanimTypes.h"
 #include "KinanimData.h"
 #include "KinanimWrapper.h"
@@ -175,7 +176,8 @@ FTransform UKinanimParser::ToUnrealTransform(const FTransformData& TrData)
 	return ToReturn;
 }
 
-UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping)
+UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* SkeletalMesh, void* Stream,
+                                                               const UKinanimBonesDataAsset* InBoneMapping)
 {
 	//Default scale and matrice
 	const float SceneScale = 100;
@@ -193,15 +195,15 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 		                                  true, FLinearColor::Red);
 		return nullptr;
 	}
-	
+
 	KinanimWrapper::KinanimImporter_ReadFile(Importer, Stream);
-	
+
 	FKinanimData* data = (FKinanimData*)KinanimWrapper::KinanimImporter_GetResult(Importer);
 	if (data == nullptr)
 	{
 		UKismetSystemLibrary::PrintString(SkeletalMesh,
-										  FString::Printf(TEXT("ERROR! Failed to open kinanim stream !")), true,
-										  true, FLinearColor::Red);
+		                                  FString::Printf(TEXT("ERROR! Failed to open kinanim stream !")), true,
+		                                  true, FLinearColor::Red);
 		return nullptr;
 	}
 
@@ -214,8 +216,9 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 	if (NumFrames <= 0)
 	{
 		UKismetSystemLibrary::PrintString(SkeletalMesh,
-										  FString::Printf(TEXT("ERROR! kinanim file corrupted, 0 frames found !")), true,
-										  true, FLinearColor::Red);
+		                                  FString::Printf(TEXT("ERROR! kinanim file corrupted, 0 frames found !")),
+		                                  true,
+		                                  true, FLinearColor::Red);
 		return nullptr;
 	}
 	FFrameRate FrameRate(data->Header->frameRate, 1);
@@ -231,7 +234,8 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 	const TArray<FTransform> BonesPoses = AnimSequence->GetSkeleton()->GetReferenceSkeleton().GetRefBonePose();
 
 	// Use reflection to find the property field related to the AnimSequence's duration
-	FFloatProperty* FloatProperty = CastField<FFloatProperty>(UAnimSequence::StaticClass()->FindPropertyByName(TEXT("SequenceLength")));
+	FFloatProperty* FloatProperty = CastField<FFloatProperty>(
+		UAnimSequence::StaticClass()->FindPropertyByName(TEXT("SequenceLength")));
 	FloatProperty->SetPropertyValue_InContainer(AnimSequence, Duration);
 
 	AnimSequence->bEnableRootMotion = false;
@@ -275,7 +279,7 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 		{
 			TrackName = InBoneMapping->GetBoneNameByIndex(static_cast<EKinanimTransform>(i));
 		}
-		
+
 		FName BoneName = FName(TrackName);
 
 		FRawAnimSequenceTrack Track = FRawAnimSequenceTrack();
@@ -292,10 +296,10 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 		}
 
 		UKismetSystemLibrary::PrintString(SkeletalMesh,
-										  FString::Printf(TEXT("Found bone '%s' (index: %i)"),
-														  *BoneName.ToString(), BoneIndex), true,
-										  true, FLinearColor::Green);
-		
+		                                  FString::Printf(TEXT("Found bone '%s' (index: %i)"),
+		                                                  *BoneName.ToString(), BoneIndex), true,
+		                                  true, FLinearColor::Green);
+
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];
 
@@ -369,4 +373,93 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 
 
 	return AnimSequence;
+}
+
+bool UKinanimParser::LoadStartDataFromStream(UObject* WorldContext, void* stream)
+{
+	void* Importer = KinanimWrapper::Ctor_KinanimImporter(KinanimWrapper::Ctor_InterpoCompression());
+	if (Importer == nullptr)
+	{
+		UKismetSystemLibrary::PrintString(WorldContext,
+		                                  FString::Printf(TEXT("ERROR! Failed to open kinanim stream !")), true,
+		                                  true, FLinearColor::Red);
+		return false;
+	}
+
+	KinanimWrapper::KinanimImporter_ReadHeader(Importer, stream);
+	KinanimWrapper::KinanimImporter_ReadFrames(Importer, stream);
+
+	void* Result = KinanimWrapper::KinanimImporter_GetResult(Importer);
+
+	void* Header = KinanimWrapper::KinanimData_Get_header(Result);
+	// void* Header = KinanimWrapper::KinanimImporter_GetUncompressedHeader(Importer);
+	if (Header == nullptr)
+	{
+		UKismetSystemLibrary::PrintString(WorldContext,
+		                                  FString::Printf(TEXT("ERROR! Failed to retreive kinanim header !")), true,
+		                                  true, FLinearColor::Red);
+		return false;
+	}
+
+	return true;
+}
+
+bool UKinanimParser::DownloadRemainingFrames(UObject* WorldContext, void* stream)
+{
+	void* result = KinanimWrapper::KinanimImporter_GetResult(stream);
+
+	int RemainingFrames =
+		KinanimWrapper::KinanimContent_GetFrameCount(KinanimWrapper::KinanimData_Get_content(result));
+	RemainingFrames -= KinanimWrapper::KinanimImporter_GetHighestImportedFrame(stream) + 1;
+
+	int ChunkCount = FMath::CeilToInt(RemainingFrames / (float)InterpoCompression::DEFAULT_BATCH_SIZE);
+	int MinFrame = 0, MaxFrame = 0, FrameCount = 0;
+	for (int chunk = 0; chunk < ChunkCount; ++chunk)
+	{
+		MinFrame = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
+			KinanimWrapper::KinanimImporter_Get_compression(stream));
+		if (MinFrame == -1)
+			MinFrame = KinanimWrapper::KinanimImporter_GetHighestImportedFrame(stream) + 1;
+
+		// LoadBatchFrameKinanim()
+
+		MaxFrame = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
+			KinanimWrapper::KinanimImporter_Get_compression(stream));
+		if (MaxFrame == -1)
+			MaxFrame = KinanimWrapper::KinanimImporter_GetHighestImportedFrame(stream);
+
+		FrameCount = KinanimWrapper::KinanimContent_GetFrameCount(
+			KinanimWrapper::KinanimData_Get_content(result));
+
+		if (MaxFrame >= FrameCount)
+		{
+			MaxFrame = FrameCount - 1;
+		}
+
+		// Should write on disk but we will not do that
+	}
+	return true;
+}
+
+bool UKinanimParser::LoadBatchFrameKinanim(void* stream, const FString& Url, const int FrameCount)
+{
+	void* Result = KinanimWrapper::KinanimImporter_GetResult(stream);
+	
+	int MinFrame = KinanimWrapper::KinanimImporter_GetHighestImportedFrame(stream) + 1;
+	int MaxFrame = MinFrame + FrameCount - 1;
+
+	void* Content = KinanimWrapper::KinanimData_Get_content(Result);
+	uint16 TotalFrameCount = KinanimWrapper::KinanimContent_GetFrameCount(Content);
+
+	int64 ByteMin = KinanimWrapper::KinanimHeader_Get_binarySize(
+		KinanimWrapper::KinanimData_Get_header(Result)) - 1;
+	int64 ByteMax = ByteMin;
+
+	void* Header = KinanimWrapper::KinanimData_Get_header(Result);
+	for (uint32 i = 0; i < MaxFrame; ++i)
+	{
+		
+		ByteMin += KinanimWrapper::KinanimHeader_Get_frameSizes(Header, i);
+	}
+	return true;
 }
