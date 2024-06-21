@@ -4,9 +4,77 @@
 
 #include <KinanimTypes.h>
 
+#include "Interfaces/IHttpRequest.h"
+
 #include "CoreMinimal.h"
 
 #include "KinanimParser.generated.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogKinanimParser, Log, All);
+
+DECLARE_DELEGATE_OneParam(FOnKinanimDownloadComplete, UKinanimDownloader*);
+
+UCLASS()
+class KINANIM_API UKinanimDownloader : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	void SetUrl(const FString& InUrl) { Url = InUrl; }
+	void SetImporter(void** InImporter) { Importer = *InImporter; }
+
+	bool DownloadRemainingFrames();
+
+	void LoadBatchFrameKinanim();
+
+	void OnRequestComplete(
+		TSharedPtr<IHttpRequest> HttpRequest,
+		TSharedPtr<IHttpResponse> HttpResponse, bool bSuccess);
+
+	FOnKinanimDownloadComplete OnKinanimDownloadComplete;
+
+	void* GetImporter() const;
+	void* GetUncompressedHeader() const;
+	void* GetContent() const;
+	FFrameData* GetFrames() const;
+	int32 GetFrameCount() const;
+	
+	void SetAnimationMetadataID(const FGuid& InID);
+	const FGuid& GetAnimationMetadataID() const;
+
+	UAnimSequence* GetAnimationSequence() const;
+
+	void SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UKinanimBonesDataAsset* InBoneMapping);
+
+private:
+	FString Url;
+	void* Importer;
+
+	// Used for the exporter
+	void* UncompressedHeader;
+	void* FinalContent;
+
+	int32 FrameCount;
+	int32 ChunkCount;
+	int32 CurrentChunk;
+	int32 MaxFrameDownloaded;
+	int32 MaxFrameUncompressed;
+	int32 MinFrameDownloaded;
+	int32 MinFrameUncompressed;
+
+	FGuid AnimationMetadataID;
+
+	/**
+	 * 
+	 */
+	UPROPERTY()
+	UAnimSequence* AnimSequence;
+
+	UPROPERTY()
+	UKinanimBonesDataAsset* BoneMapping;
+
+	TArray<FFrameData> Frames;
+};
 
 /**
  * 
@@ -24,9 +92,15 @@ public:
 	static UAnimSequence* LoadSkeletalAnimationFromStream(
 		USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping);
 
-	static bool LoadStartDataFromStream(UObject* WorldContext, void* stream);
+	static UAnimSequence* LoadSkeletalAnimationFromImporter(
+		USkeletalMesh* SkeletalMesh, void* Importer, const UKinanimBonesDataAsset* InBoneMapping);
 
-	static bool DownloadRemainingFrames(UObject* WorldContext, void* stream);
+	static bool LoadStartDataFromStream(UObject* WorldContext, void* stream, void** OutImporter);
 
-	static bool LoadBatchFrameKinanim(void* stream, const FString& Url, const int FrameCount);
+	static bool DownloadRemainingFrames(UObject* WorldContext, void* stream, const FString& Url, void** Importer);
+	
+	static bool GetByteArrayFromStream(void* InImporter, TArray<uint8>& OutResult);
+
+	// static bool LoadBatchFrameKinanim(void* stream,
+	//                                   const FString& Url, const int FrameCount, void* Importer);
 };

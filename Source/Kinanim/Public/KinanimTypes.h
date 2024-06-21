@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "KinanimTypes.generated.h"
 
+constexpr uint32 HEADER_DOWNLOAD_SIZE = 1000 * 5;
+
 UENUM(BlueprintType)
 enum class EKeyType : uint8
 {
@@ -296,23 +298,12 @@ struct KINANIM_API FTransformData
 	bool	bHasScale;
 };
 
-USTRUCT()
 struct KINANIM_API FFrameData
 {
-	GENERATED_BODY()
-
-	UPROPERTY()
 	ETransformDeclarationFlag TransformDeclarationFlag;
-
-	UPROPERTY()
 	TArray<FTransformData> Transforms;
-
-	UPROPERTY()
 	EBlendshapeDeclarationFlag BlendshapeDeclarationFlag;
-
-	UPROPERTY()
 	TArray<float> Blendshapes;
-
 	FFrameData()
 		:TransformDeclarationFlag(ETransformDeclarationFlag::TDF_MaxValue),
 		BlendshapeDeclarationFlag(EBlendshapeDeclarationFlag::BDF_MaxValue)

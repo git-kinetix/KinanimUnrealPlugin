@@ -439,4 +439,4 @@ void* KinanimWrapper::Ctor_KinanimImporter(void* /* IKinanimCompression* */ comp
 void KinanimWrapper::Delete_KinanimImporter(void* _this_)
 {
 	if (KinanimPointerCollector::ReleasePointer((IDisposable*)_this_)) { delete ((KinanimImporter*)_this_); }
-};
+}

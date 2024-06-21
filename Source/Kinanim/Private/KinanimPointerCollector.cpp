@@ -3,17 +3,17 @@
 
 #include "KinanimPointerCollector.h"
 
-bool bEnabled = false;
+bool bKinanimEnabled = false;
 TArray<IDisposable*> Pointers;
 
 void KinanimPointerCollector::SetEnabled(bool enabled) 
 {
-	bEnabled = enabled;
+	bKinanimEnabled = enabled;
 }
 
 void KinanimPointerCollector::CollectPointer(IDisposable* ptr)
 {
-	if (!bEnabled)
+	if (!bKinanimEnabled)
 		return;
 
 	if (ptr == nullptr)
@@ -26,7 +26,7 @@ void KinanimPointerCollector::CollectPointer(IDisposable* ptr)
 
 bool KinanimPointerCollector::ReleasePointer(IDisposable* ptr)
 {
-	if (!bEnabled)
+	if (!bKinanimEnabled)
 		return false;
 
 	if (ptr == nullptr)
