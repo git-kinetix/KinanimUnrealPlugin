@@ -6,16 +6,27 @@
 #include "InterpoCompression.h"
 #include "KinanimExporter.h"
 #include "KinanimImporter.h"
+#include "iomemstream.h"
+
+char* KinanimWrapper::IoMemStream_GetBuffer(void* /* ioMemStream* */ stream)
+{
+	return ((ioMemStream*)stream)->GetBuffer();
+}
+
+size_t KinanimWrapper::IoMemStream_GetBufferSize(void* /* ioMemStream* */ stream)
+{
+	return ((ioMemStream*)stream)->GetBufferSize();
+}
 
 void KinanimWrapper::KinanimExporter_WriteFile(void* /* ostream* */ stream, void* /* KinanimData* */ data,
-                                               void* /* IKinanimCompression* */ compression, bool clone)
+											   void* /* IKinanimCompression* */ compression, bool clone)
 {
 	KinanimExporter::WriteFile((std::ostream*)stream, (FKinanimData*)data, (IKinanimCompression*)compression, clone);
 };
 
 void KinanimWrapper::KinanimExporter_WriteFileHeaderContent(void* /* ostream* */ stream,
-                                                            void* /* KinanimHeader* */ header,
-                                                            void* /* KinanimContent* */ content)
+															void* /* KinanimHeader* */ header,
+															void* /* KinanimContent* */ content)
 {
 	KinanimExporter::WriteFileHeaderContent((std::ostream*)stream, (FKinanimHeader*)header, (FKinanimContent*)content);
 };
@@ -26,13 +37,13 @@ void KinanimWrapper::KinanimExporter_WriteHeader(void* /* ostream* */ stream, vo
 };
 
 void KinanimWrapper::KinanimExporter_OverrideHeader(void* /* ostream* */ stream, void* /* KinanimHeader* */ header,
-                                                    unsigned long long fileStartPosition)
+													unsigned long long fileStartPosition)
 {
 	KinanimExporter::OverrideHeader((std::ostream*)stream, (FKinanimHeader*)header, fileStartPosition);
 };
 
 void KinanimWrapper::KinanimExporter_WriteContent(void* /* ostream* */ stream, void* /* KinanimContent* */ content,
-                                                  void* /* KinanimHeader* */ referenceHeader)
+												  void* /* KinanimHeader* */ referenceHeader)
 {
 	KinanimExporter::WriteContent((std::ostream*)stream, (FKinanimContent*)content, (FKinanimHeader*)referenceHeader);
 };
@@ -48,8 +59,8 @@ void KinanimWrapper::KinanimExporter_Header_WriteFrameRate(void* /* ostream* */ 
 };
 
 void KinanimWrapper::KinanimExporter_Header_WriteFrameCountAndSizes(void* /* ostream* */ stream,
-                                                                    unsigned short frameCount,
-                                                                    unsigned short* frameSizes)
+																	unsigned short frameCount,
+																	unsigned short* frameSizes)
 {
 	KinanimExporter::Header::WriteFrameCountAndSizes((std::ostream*)stream, frameCount, frameSizes);
 };
@@ -70,14 +81,14 @@ void KinanimWrapper::KinanimExporter_Header_WriteEndHeader(void* /* ostream* */ 
 };
 
 void KinanimWrapper::KinanimExporter_Content_WriteFrames(void* /* ostream* */ stream, FFrameData* frames,
-                                                         unsigned short frameCount, bool hasBlendshape,
-                                                         unsigned short startFrameId)
+														 unsigned short frameCount, bool hasBlendshape,
+														 unsigned short startFrameId)
 {
 	KinanimExporter::Content::WriteFrames((std::ostream*)stream, frames, frameCount, hasBlendshape, startFrameId);
 };
 
 void KinanimWrapper::KinanimExporter_Content_WriteFrame(void* /* ostream* */ stream, unsigned short i,
-                                                        FFrameData frameData, bool hasBlendshape)
+														FFrameData frameData, bool hasBlendshape)
 {
 	KinanimExporter::Content::WriteFrame((std::ostream*)stream, i, frameData, hasBlendshape);
 };
@@ -94,8 +105,8 @@ void KinanimWrapper::KinanimExporter_Content_Frame_WriteTransformDeclarationFlag
 };
 
 void KinanimWrapper::KinanimExporter_Content_Frame_WriteTransforms(void* /* ostream* */ stream,
-                                                                   FTransformData transforms[55],
-                                                                   ETransformDeclarationFlag transformDeclarationFlag)
+																   FTransformData transforms[55],
+																   ETransformDeclarationFlag transformDeclarationFlag)
 {
 	KinanimExporter::Content::Frame::WriteTransforms((std::ostream*)stream, transforms, transformDeclarationFlag);
 };
@@ -107,8 +118,8 @@ void KinanimWrapper::KinanimExporter_Content_Frame_WriteBlendshapeDeclarationFla
 };
 
 void KinanimWrapper::KinanimExporter_Content_Frame_WriteBlendshapes(void* /* ostream* */ stream, float blendshapes[53],
-                                                                    EBlendshapeDeclarationFlag
-                                                                    blendshapeDeclarationFlag)
+																	EBlendshapeDeclarationFlag
+																	blendshapeDeclarationFlag)
 {
 	KinanimExporter::Content::Frame::WriteBlendshapes((std::ostream*)stream, blendshapes, blendshapeDeclarationFlag);
 };
@@ -339,7 +350,7 @@ void KinanimWrapper::InterpoCompression_Compress(void* /* InterpoCompression */ 
 };
 
 void KinanimWrapper::InterpoCompression_DecompressFrame(void* /* InterpoCompression */ _this_,
-                                                        unsigned short loadedFrameCount)
+														unsigned short loadedFrameCount)
 {
 	((InterpoCompression*)_this_)->DecompressFrame(loadedFrameCount);
 };
@@ -407,19 +418,19 @@ void KinanimWrapper::KinanimImporter_ReadFrame(void* /* KinanimImporter */ _this
 };
 
 void KinanimWrapper::KinanimImporter_ReadTransform(void* /* KinanimImporter */ _this_, FFrameData* frameData,
-                                                   void* /* istream* */ reader)
+												   void* /* istream* */ reader)
 {
 	((KinanimImporter*)_this_)->ReadTransform(frameData, (std::istream*)reader);
 };
 
 void KinanimWrapper::KinanimImporter_ReadBlendshape(void* /* KinanimImporter */ _this_, FFrameData* frameData,
-                                                    void* /* istream* */ reader)
+													void* /* istream* */ reader)
 {
 	((KinanimImporter*)_this_)->ReadBlendshape(frameData, (std::istream*)reader);
 };
 
 void KinanimWrapper::KinanimImporter_ComputeUncompressedFrameSize(void* /* KinanimImporter */ _this_, int minFrame,
-                                                                  int maxFrame)
+																  int maxFrame)
 {
 	((KinanimImporter*)_this_)->ComputeUncompressedFrameSize(minFrame, maxFrame);
 };

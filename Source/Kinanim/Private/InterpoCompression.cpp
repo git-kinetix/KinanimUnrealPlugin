@@ -788,6 +788,7 @@ void InterpoCompression::DecompressTransforms()
 		FVector4f v4End = target->Content->frames[end].Transforms[trIndex].Rotation;
 		bool sameValue = KinetixMath4::IsApproximately(v4Start, v4End, EPSILON);
 		frames.erase(frames.begin() + 0); //This is to avoid getting caught in the 'if' of the forloop without lerping
+
 		for (unsigned short frame = start + 1u; frame < loadedFrameCount; frame++)
 		{
 			if (frame == frames[0])
@@ -817,7 +818,7 @@ void InterpoCompression::DecompressTransforms()
 
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
 			target->Content->frames[frame].TransformDeclarationFlag |= static_cast<ETransformDeclarationFlag>(1ull << trIndex);
-
+		
 			if (!sameValue)
 			{
 
@@ -849,6 +850,9 @@ void InterpoCompression::DecompressTransforms()
 }
 void InterpoCompression::DecompressBlendshapes()
 {
+	if (!target->Header->hasBlendshapes)
+		return;
+
 	for (uint8 trIndex = 0; trIndex < static_cast<uint8>(EKinanimBlendshape::KB_Count); trIndex++)
 	{
 		unsigned short current = lastNonCompressedBlendshape[trIndex];// "the last time we decompressed this blendshape we were at frame ..."
@@ -899,8 +903,10 @@ void InterpoCompression::DecompressBlendshapes()
 		float floatEnd   = target->Content->frames[end].Blendshapes[trIndex];
 		bool sameValue = KinetixMath1::IsApproximately(floatStart, floatEnd, EPSILON);
 		frames.erase(frames.begin() + 0); //This is to avoid getting caught in the 'if' of the forloop without lerping
+
 		for (unsigned short frame = start + 1; frame < loadedFrameCount; frame++)
 		{
+
 			if (frame == frames[0])
 			{
 				//We arrived on the "end" frame that means our lerping ends here
@@ -927,6 +933,7 @@ void InterpoCompression::DecompressBlendshapes()
 
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
 			target->Content->frames[frame].BlendshapeDeclarationFlag |= static_cast<EBlendshapeDeclarationFlag>(1ull << trIndex);
+
 
 			if (!sameValue)
 			{

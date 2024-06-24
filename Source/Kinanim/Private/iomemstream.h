@@ -20,6 +20,9 @@ class KINANIM_API memoryBuffer:
 	memoryBuffer(size_t startSize = 1024, std::ios_base::openmode _Mode = std::ios_base::in | std::ios_base::out | std::ios_base::binary);
 	~memoryBuffer() override;
 
+	char* GetBuffer();
+	size_t GetBufferSize();
+
 	protected:
 	virtual std::streamsize showmanyc() override;
 
@@ -43,6 +46,9 @@ class KINANIM_API ioMemStream:
 	ioMemStream(size_t size, ios_base::openmode _Mode = ios_base::in | ios_base::out | ios_base::binary);
 	
 	virtual ~ioMemStream() override;
-	
+
+	char* GetBuffer() const;
+	size_t GetBufferSize() const;
+
 };
 //-------------------//

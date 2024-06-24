@@ -16,6 +16,7 @@
 #include "Interfaces/IHttpResponse.h"
 
 #include "Kismet/KismetSystemLibrary.h"
+#include <KinanimImporter.h>
 
 DEFINE_LOG_CATEGORY(LogKinanimParser);
 
@@ -152,22 +153,14 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	MinFrameUncompressed = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
 		KinanimWrapper::KinanimImporter_Get_compression(Importer));
 
-	FKinanimHeader* UncompressedHeaderTest = (FKinanimHeader*)KinanimWrapper::KinanimImporter_GetUncompressedHeader(Importer);
-
+	FKinanimHeader* UncompressedHeaderTest = Importer->GetUncompressedHeader();
+	
 	KinanimWrapper::KinanimImporter_ReadFrames(Importer, BinaryStream);
 
-	UncompressedHeaderTest = (FKinanimHeader*)KinanimWrapper::KinanimImporter_GetUncompressedHeader(Importer);
-	uint16 CountTest = UncompressedHeaderTest->GetFrameCount();
-	if (UncompressedHeaderTest == nullptr && CountTest)
-	{
-		UE_LOG(LogKinanimParser, Error, TEXT("ERROR! Failed to get uncompressed header ! %p %i"), UncompressedHeaderTest, CountTest);
-	}
-
+	UncompressedHeaderTest = Importer->GetUncompressedHeader();
+	
 	MaxFrameUncompressed = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
 		KinanimWrapper::KinanimImporter_Get_compression(Importer));
-
-	UE_LOG(LogKinanimParser, Log, TEXT("LoadBatchFrameKinanim(): Decompressed:[%i - %i]"),
-	       MinFrameUncompressed, MaxFrameUncompressed);
 
 	FrameCount = KinanimWrapper::KinanimContent_GetFrameCount(
 		KinanimWrapper::KinanimData_Get_content(KinanimWrapper::KinanimImporter_GetResult(Importer)));
@@ -307,11 +300,9 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	if (CurrentChunk >= ChunkCount)
 	{
 		
-		UncompressedHeader = KinanimWrapper::KinanimImporter_GetUncompressedHeader(Importer);
+		UncompressedHeader = Importer->GetUncompressedHeader();
 
-		FinalContent =
-			KinanimWrapper::KinanimData_Get_content(
-				KinanimWrapper::KinanimImporter_GetResult(Importer));
+		FinalContent = Importer->GetResult()->Content;
 		OnKinanimDownloadComplete.ExecuteIfBound(this);
 		return;
 	}
@@ -705,7 +696,7 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 	FMatrix SceneBasis = BaseTransform.ToMatrixWithScale();
 
 	//Import kinanim file
-	void* Importer = KinanimWrapper::Ctor_KinanimImporter(KinanimWrapper::Ctor_InterpoCompression());
+	KinanimImporter* Importer = new KinanimImporter(new InterpoCompression());
 	if (Importer == nullptr)
 	{
 		UKismetSystemLibrary::PrintString(SkeletalMesh,

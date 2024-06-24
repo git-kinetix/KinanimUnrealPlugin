@@ -29,6 +29,16 @@ memoryBuffer::~memoryBuffer()
 	buffer.clear();
 }
 
+char* memoryBuffer::GetBuffer()
+{
+	return buffer.data();
+}
+
+size_t memoryBuffer::GetBufferSize()
+{
+	buffer.size();
+}
+
 void memoryBuffer::updatePointerPos(std::streamsize arraySize, std::streampos poseG, std::streampos poseP)
 {
 	setg(buffer.data(), poseG + buffer.data(), buffer.data() + arraySize);
@@ -141,9 +151,20 @@ ioMemStream::ioMemStream(const char* data, size_t size, ios_base::openmode _Mode
 ioMemStream::ioMemStream(size_t size, ios_base::openmode _Mode):
 	std::iostream(new memoryBuffer(size, _Mode))
 {
+	(memoryBuffer*)this->rdbuf();
 }
 
 ioMemStream::~ioMemStream()
 {
 	delete rdbuf();
+}
+
+char* ioMemStream::GetBuffer() const
+{
+	return ((memoryBuffer*)rdbuf())->GetBuffer();
+}
+
+size_t ioMemStream::GetBufferSize() const
+{
+	return ((memoryBuffer*)rdbuf())->GetBufferSize();
 }

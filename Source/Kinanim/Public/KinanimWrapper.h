@@ -16,6 +16,9 @@
 */
 namespace KinanimWrapper
 {
+	KINANIM_API char* IoMemStream_GetBuffer(void* /* ioMemStream* */ stream);
+	KINANIM_API size_t IoMemStream_GetBufferSize(void* /* ioMemStream* */ stream);
+
 	KINANIM_API void KinanimExporter_WriteFile(void* /* ostream* */ stream, void* /* KinanimData* */ data,
 	                                           void* /* IKinanimCompression* */ compression = nullptr, bool clone = 1);
 

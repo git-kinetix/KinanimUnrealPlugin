@@ -31,9 +31,8 @@ void* Kinanim::OpenWriteFile(const TCHAR* filepath, bool isAppend)
 
 void* Kinanim::CreateBinaryStream(const SIZE_T size)
 {
-	// ioMemStream* ostr = new ioMemStream(size);
-	// return ostr;
-	return nullptr;
+	ioMemStream* ostr = new ioMemStream(size);
+	return ostr;
 }
 
 void* Kinanim::CreateBinaryStreamFromArray(const char* binary, const SIZE_T size)
@@ -44,19 +43,19 @@ void* Kinanim::CreateBinaryStreamFromArray(const char* binary, const SIZE_T size
 
 void Kinanim::ifstream_CloseStream(void* stream)
 {
-	// std::ifstream* ifStr = (std::ifstream*)stream;
-	// ifStr->close();
-	// delete ifStr;
+	std::ifstream* ifStr = (std::ifstream*)stream;
+	ifStr->close();
+	delete ifStr;
 }
 
 void Kinanim::ofstream_CloseStream(void* stream)
 {
-	// std::ofstream* ofStr = (std::ofstream*)stream;
-	// ofStr->close();
-	// delete ofStr;
+	std::ofstream* ofStr = (std::ofstream*)stream;
+	ofStr->close();
+	delete ofStr;
 }
 
 void Kinanim::ioMemStream_CloseStream(void* stream)
 {
-	// delete ((ioMemStream*)stream);
+	delete ((ioMemStream*)stream);
 }
