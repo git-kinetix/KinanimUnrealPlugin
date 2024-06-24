@@ -169,7 +169,7 @@ void KinanimExporter::Content::WriteFrames(std::ostream* stream, FFrameData* fra
 
 void KinanimExporter::Content::WriteFrame(std::ostream* stream, unsigned short i, FFrameData frameData, bool hasBlendshape)
 {
-	UE_LOG(LogCore, Log, TEXT("[KINATEST][Export]  frame:%i"), i);
+	UE_LOG(LogCore, Log, TEXT("[KINATEST][Export]  frame:%i  trFlag:%lld"), i, frameData.TransformDeclarationFlag);
 	bool hasTransform = (static_cast<uint64>(frameData.TransformDeclarationFlag) != 0);
 	bool frameHadBlend = (static_cast<uint64>(frameData.BlendshapeDeclarationFlag) != 0);
 

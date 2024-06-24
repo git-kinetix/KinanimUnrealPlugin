@@ -322,7 +322,7 @@ void* UKinanimDownloader::GetUncompressedHeader() const
 
 FFrameData* UKinanimDownloader::GetFrames() const
 {
-	return (FFrameData*)Frames.GetData();
+	return Importer->GetResult()->Content->frames;
 }
 
 int32 UKinanimDownloader::GetFrameCount() const

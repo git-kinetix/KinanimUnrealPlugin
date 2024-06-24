@@ -165,9 +165,7 @@ void KinanimImporter::ReadFrame(std::istream* reader)
 	READ_STREAM(reader, ullStreamValue);
 
 	frameData.TransformDeclarationFlag = static_cast<ETransformDeclarationFlag>(ullStreamValue);
-	UE_LOG(LogCore, Log, TEXT("[KINATEST][Import]  frame:%i"), index);
 
-	
 	ReadTransform(&frameData, reader);
 	if (result->Header->hasBlendshapes)
 	{
@@ -178,6 +176,8 @@ void KinanimImporter::ReadFrame(std::istream* reader)
 	}
 
 	result->Content->frames[index] = frameData;
+
+	UE_LOG(LogCore, Log, TEXT("[KINATEST][Import]  frame:%i  trFlag:%lld"), index, frameData.TransformDeclarationFlag);
 
 	//Check if we read too much stuff 
 	std::streampos _pointerEnd = reader->tellg();
