@@ -177,13 +177,13 @@ void KinanimExporter::Content::WriteFrame(std::ostream* stream, unsigned short i
 		return;
 
 	//WRITE_STREAM(stream, " h ");
+	//WRITE_STREAM(stream, " TRANSFORM ");
 
 	Frame::WriteFrameId(stream, i);
 	Frame::WriteTransformDeclarationFlag(stream, frameData.TransformDeclarationFlag);
 	if (hasTransform)
 		Frame::WriteTransforms(stream, frameData.Transforms.GetData(), frameData.TransformDeclarationFlag);
 
-	//WRITE_STREAM(stream, " hello ");
 
 	if (!hasBlendshape)  //Don't write empty frames
 		return;

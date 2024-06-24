@@ -36,7 +36,7 @@ char* memoryBuffer::GetBuffer()
 
 size_t memoryBuffer::GetBufferSize()
 {
-	buffer.size();
+	return buffer.size();
 }
 
 void memoryBuffer::updatePointerPos(std::streamsize arraySize, std::streampos poseG, std::streampos poseP)
