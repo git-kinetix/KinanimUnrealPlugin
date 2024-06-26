@@ -151,7 +151,7 @@ ioMemStream::ioMemStream(const char* data, size_t size, ios_base::openmode _Mode
 ioMemStream::ioMemStream(size_t size, ios_base::openmode _Mode):
 	std::iostream(new memoryBuffer(size, _Mode))
 {
-	(memoryBuffer*)this->rdbuf();
+	std::streambuf* result = this->rdbuf();
 }
 
 ioMemStream::~ioMemStream()

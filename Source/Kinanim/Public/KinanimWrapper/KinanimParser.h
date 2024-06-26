@@ -18,6 +18,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogKinanimParser, Log, All);
 
 DECLARE_DELEGATE_OneParam(FOnKinanimDownloadComplete, UKinanimDownloader*);
 
+class UKinanimBoneCompressionCodec;
+
 UCLASS()
 class KINANIM_API UKinanimDownloader : public UObject
 {
@@ -67,6 +69,11 @@ private:
 	int32 MinFrameUncompressed;
 
 	FGuid AnimationMetadataID;
+
+#if !WITH_EDITOR
+	UKinanimBoneCompressionCodec* CompressionCodec;
+#endif
+
 
 	/**
 	 * 
