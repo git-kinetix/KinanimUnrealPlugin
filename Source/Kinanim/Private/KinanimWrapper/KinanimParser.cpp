@@ -314,13 +314,18 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	{
 		UncompressedHeader = Importer->GetUncompressedHeader();
 		FinalContent = Importer->GetResult()->Content;
-		OnKinanimDownloadComplete.ExecuteIfBound(this);
 		
 #if  !WITH_EDITOR
 		CompressionCodec = nullptr;
 #endif
 
+		OnKinanimDownloadComplete.ExecuteIfBound(this);
 		return;
+	}
+
+	if (CurrentChunk == FMath::Floor(ChunkCount / 2))
+	{
+		OnKinanimPlayAvailable.ExecuteIfBound(this);
 	}
 
 	LoadBatchFrameKinanim();
@@ -522,18 +527,19 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	NewAnimSequence->GetController().SetNumberOfFrames(FrameCount - 1);
 	NewAnimSequence->GetController().NotifyPopulated();
 	NewAnimSequence->GetController().CloseBracket(false);
-	AnimSequence->AddToRoot();
+
 #else
-	AnimSequence->CompressedData.CompressedDataStructure = MakeUnique<FUECompressedAnimData>();
-	AnimSequence->CompressedData.CompressedDataStructure->CompressedNumberOfKeys = FrameCount;
-	AnimSequence->CompressedData.BoneCompressionCodec = CompressionCodec;
+	NewAnimSequence->CompressedData.CompressedDataStructure = MakeUnique<FUECompressedAnimData>();
+	NewAnimSequence->CompressedData.CompressedDataStructure->CompressedNumberOfKeys = FrameCount;
+	NewAnimSequence->CompressedData.BoneCompressionCodec = CompressionCodec;
 	UKinanimCurveCompressionCodec* AnimCurveCompressionCodec = NewObject<UKinanimCurveCompressionCodec>();
 	AnimCurveCompressionCodec->AnimSequence = AnimSequence;
-	AnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
-	AnimSequence->PostLoad();
+	NewAnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
+	NewAnimSequence->PostLoad();
 #endif
 
 	AnimSequence = NewAnimSequence;
+	AnimSequence->AddToRoot();
 }
 
 #pragma endregion

@@ -18,6 +18,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogKinanimParser, Log, All);
 
 DECLARE_DELEGATE_OneParam(FOnKinanimDownloadComplete, UKinanimDownloader*);
 
+DECLARE_DELEGATE_OneParam(FOnKinanimPlayAvailable, UKinanimDownloader*);
+
 class UKinanimBoneCompressionCodec;
 
 UCLASS()
@@ -36,7 +38,8 @@ public:
 	void OnRequestComplete(
 		TSharedPtr<IHttpRequest> HttpRequest,
 		TSharedPtr<IHttpResponse> HttpResponse, bool bSuccess);
-
+	
+	FOnKinanimPlayAvailable OnKinanimPlayAvailable;
 	FOnKinanimDownloadComplete OnKinanimDownloadComplete;
 
 	void* GetImporter() const;

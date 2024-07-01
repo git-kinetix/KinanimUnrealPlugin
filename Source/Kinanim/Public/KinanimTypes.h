@@ -195,7 +195,7 @@ enum class ETransformDeclarationFlag : uint64
 	TDF_RightLittleIntermediate = (uint64)1 << static_cast<uint64>(EKinanimTransform::KT_RightLittleIntermediate)	UMETA(DisplayName="RightLittleIntermediate"),
 	TDF_RightLittleDistal       = (uint64)1 << static_cast<uint64>(EKinanimTransform::KT_RightLittleDistal)			UMETA(DisplayName="RightLittleDistal"),
 
-	TDF_MaxValue = 0 - 1	UMETA(DisplayName="MAX_VALUE"), //18446744073709551615
+	TDF_MaxValue = 0 - 1	UMETA(DisplayName="MAX_VALUE") //18446744073709551615
 };
 
 UENUM()
@@ -255,7 +255,7 @@ enum class EBlendshapeDeclarationFlag: uint64
 	BDF_MouthStretchRight    = (uint64)1 << static_cast<uint64>(EKinanimBlendshape::KB_MouthStretchRight)	UMETA(DisplayName="MouthStretchRight"),
 	BDF_TongueOut            = (uint64)1 << static_cast<uint64>(EKinanimBlendshape::KB_TongueOut)			UMETA(DisplayName="TongueOut"),
 
-	BDF_MaxValue = 0 - 1	UMETA(DisplayName="MAX_VALUE"), //18446744073709551615
+	BDF_MaxValue = 0 - 1	UMETA(DisplayName="MAX_VALUE") //18446744073709551615
 };
 
 inline ETransformDeclarationFlag operator|(ETransformDeclarationFlag a, ETransformDeclarationFlag b)
