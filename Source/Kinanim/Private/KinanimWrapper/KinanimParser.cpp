@@ -422,8 +422,8 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 #else
 	CompressionCodec = NewObject<UKinanimBoneCompressionCodec>();
 	CompressionCodec->Tracks.AddDefaulted(BonesPoses.Num());
-	AnimSequence->CompressedData.CompressedTrackToSkeletonMapTable.AddDefaulted(BonesPoses.Num());
-	AnimSequence->AddToRoot();
+	NewAnimSequence->CompressedData.CompressedTrackToSkeletonMapTable.AddDefaulted(BonesPoses.Num());
+	NewAnimSequence->AddToRoot();
 #endif
 
 	//Declare tracks
