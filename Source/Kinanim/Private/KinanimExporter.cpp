@@ -169,19 +169,26 @@ void KinanimExporter::Content::WriteFrames(std::ostream* stream, FFrameData* fra
 
 void KinanimExporter::Content::WriteFrame(std::ostream* stream, unsigned short i, FFrameData frameData, bool hasBlendshape)
 {
-	bool hasTransform = (static_cast<uint8>(frameData.TransformDeclarationFlag) != 0);
-	bool frameHadBlend = (static_cast<uint8>(frameData.BlendshapeDeclarationFlag) != 0);
+	UE_LOG(LogCore, Log, TEXT("[KINATEST][Export]  frame:%i  trFlag:%lld"), i, frameData.TransformDeclarationFlag);
+	bool hasTransform = (static_cast<uint64>(frameData.TransformDeclarationFlag) != 0);
+	bool frameHadBlend = (static_cast<uint64>(frameData.BlendshapeDeclarationFlag) != 0);
 
 	if (!hasTransform && (!hasBlendshape || !frameHadBlend)) //Don't write empty frames
 		return;
+
+	//WRITE_STREAM(stream, " h ");
+	//WRITE_STREAM(stream, " TRANSFORM ");
 
 	Frame::WriteFrameId(stream, i);
 	Frame::WriteTransformDeclarationFlag(stream, frameData.TransformDeclarationFlag);
 	if (hasTransform)
 		Frame::WriteTransforms(stream, frameData.Transforms.GetData(), frameData.TransformDeclarationFlag);
 
+
 	if (!hasBlendshape)  //Don't write empty frames
 		return;
+
+	//WRITE_STREAM(stream, " BLEND ");
 
 	Frame::WriteBlendshapeDeclarationFlag(stream, frameData.BlendshapeDeclarationFlag);
 	if (frameHadBlend)
@@ -234,11 +241,12 @@ void KinanimExporter::Content::Frame::WriteFrameId(std::ostream* stream, unsigne
 
 void KinanimExporter::Content::Frame::WriteTransformDeclarationFlag(std::ostream* stream, ETransformDeclarationFlag transformDeclarationFlag)
 {
-	WRITE_STREAM(stream, transformDeclarationFlag);
+	uint64 casted = static_cast<uint64>(transformDeclarationFlag);
+	WRITE_STREAM(stream, casted);
 }
 
 void KinanimExporter::Content::Frame::WriteTransforms(std::ostream* stream,
-	FTransformData transforms[static_cast<unsigned long>(EKinanimTransform::KT_Count)],
+	FTransformData transforms[static_cast<unsigned char>(EKinanimTransform::KT_Count)],
 	ETransformDeclarationFlag transformDeclarationFlag)
 {
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
@@ -250,11 +258,12 @@ void KinanimExporter::Content::Frame::WriteTransforms(std::ostream* stream,
 
 void KinanimExporter::Content::Frame::WriteBlendshapeDeclarationFlag(std::ostream* stream, EBlendshapeDeclarationFlag blendshapeDeclarationFlag)
 {
-	WRITE_STREAM(stream, blendshapeDeclarationFlag);
+	uint64 casted = static_cast<uint64>(blendshapeDeclarationFlag);
+	WRITE_STREAM(stream, casted);
 }
 
 void KinanimExporter::Content::Frame::WriteBlendshapes(std::ostream* stream,
-	float blendshapes[static_cast<unsigned long>(EKinanimBlendshape::KB_Count)],
+	float blendshapes[static_cast<unsigned char>(EKinanimBlendshape::KB_Count)],
 	EBlendshapeDeclarationFlag blendshapeDeclarationFlag)
 {
 	short temp;

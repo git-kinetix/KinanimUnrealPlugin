@@ -13,12 +13,12 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#ifndef MIN
-#define MIN(a, b) ((a<b) ? a : b)
+#ifndef KINANIM_MIN
+#define KINANIM_MIN(a, b) ((a<b) ? a : b)
 #endif
 
-#ifndef MAX
-#define MAX(a, b) ((a>b) ? a : b)
+#ifndef KINANIM_MAX
+#define KINANIM_MAX(a, b) ((a>b) ? a : b)
 #endif
 
 #define DEFINE_NULLABLE_ROTATION(variableName, ...)\
@@ -348,7 +348,7 @@ InterpoCompression::~InterpoCompression()
 int32 InterpoCompression::GetMaxUncompressedFrame()
 {
 	return target->Header->hasBlendshapes ? 
-		MIN(GetMaxUncompressedTransforms(), GetMaxUncompressedBlendshapes()) :
+		KINANIM_MIN(GetMaxUncompressedTransforms(), GetMaxUncompressedBlendshapes()) :
 		GetMaxUncompressedTransforms();
 }
 
@@ -516,7 +516,7 @@ void InterpoCompression::CompressTransforms(unsigned short& numberOfFrameCut, in
 			if (!EnumFlagUtils::ContainFlag(static_cast<uint64>(targetContent->frames[iStart].TransformDeclarationFlag), static_cast<uint8>(tr)))
 				continue;
 
-			int endFrame = MIN(maxFramePerLerp + iStart, frameCount - 1);
+			int endFrame = KINANIM_MIN(maxFramePerLerp + iStart, frameCount - 1);
 			int countFrame = endFrame - iStart - 1; //count frames between the 2 frames
 			if (countFrame <= 0)
 				break;
@@ -620,7 +620,7 @@ void InterpoCompression::CompressBlendshapes(unsigned short& numberOfFrameCut, i
 				static_cast<uint64>(target->Content->frames[iStart].BlendshapeDeclarationFlag), iBl))
 				continue;
 
-			int endFrame = MIN(maxFramePerLerp + iStart, frameCount - 1);
+			int endFrame = KINANIM_MIN(maxFramePerLerp + iStart, frameCount - 1);
 			int countFrame = endFrame - iStart - 1;
 			if (countFrame <= 0)
 				break;
@@ -718,11 +718,11 @@ void InterpoCompression::DecompressFrame(unsigned short InLoadedFrameCount)
 	unsigned short lastFrameId = target->Header->GetFrameCount();
 	if (this->loadedFrameCount >= lastFrameId) //When all frame loaded
 	{
-		for (int i = 0; i < static_cast<int32>(EKinanimTransform::KT_Count); i++)
+		for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
 		{
 			lastNonCompressedFrame[i] = lastFrameId - 1;
 		}
-		for (int i = 0; i < static_cast<int32>(EKinanimBlendshape::KB_Count); i++)
+		for (uint8 i = 0; i < static_cast<uint8>(EKinanimBlendshape::KB_Count); i++)
 		{
 			lastNonCompressedBlendshape[i] = lastFrameId - 1;
 		}
@@ -739,11 +739,13 @@ void InterpoCompression::DecompressTransforms()
 		if (target->Header->KeyTypes[trIndex] != EKeyType::KT_Rotation)
 			continue;
 
-		unsigned short current = lastNonCompressedFrame[trIndex];// "the last time we decompressed this transform we were at frame ..."
+		uint16 current = lastNonCompressedFrame[trIndex];// "the last time we decompressed this transform we were at frame ..."
 		// Check all next declared transform
 
 		if (current >= loadedFrameCount)
 			continue;
+
+		current = KINANIM_MAX(current, _maxUncompressedTransforms);
 
 		//Sometimes, beginning frames are empty
 		if (!EnumFlagUtils::ContainFlag(
@@ -771,8 +773,8 @@ void InterpoCompression::DecompressTransforms()
 		}
 
 		//Check all next declared transform
-		std::vector<unsigned short> frames;
-		for (unsigned short frame = current; frame < loadedFrameCount; frame++)
+		std::vector<uint16> frames;
+		for (uint16 frame = current; frame < loadedFrameCount; frame++)
 		{
 			if (target->Content->frames[frame].Transforms[trIndex].bHasRotation)
 				frames.push_back(frame);
@@ -782,13 +784,14 @@ void InterpoCompression::DecompressTransforms()
 			continue;
 
 		//We found 2 defined values for the interpolation
-		unsigned short start = frames[0];
-		unsigned short end = frames[1];
+		uint16 start = frames[0];
+		uint16 end = frames[1];
 		FVector4f v4Start = target->Content->frames[start].Transforms[trIndex].Rotation;
 		FVector4f v4End = target->Content->frames[end].Transforms[trIndex].Rotation;
 		bool sameValue = KinetixMath4::IsApproximately(v4Start, v4End, EPSILON);
 		frames.erase(frames.begin() + 0); //This is to avoid getting caught in the 'if' of the forloop without lerping
-		for (unsigned short frame = start + 1u; frame < loadedFrameCount; frame++)
+
+		for (uint16 frame = start + uint16(1); frame < loadedFrameCount; frame++)
 		{
 			if (frame == frames[0])
 			{
@@ -816,8 +819,10 @@ void InterpoCompression::DecompressTransforms()
 			}
 
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
+			UE_LOG(LogCore, Log, TEXT("[KINATEST][Compress]  frame:%i  trIndex:%i trFlag:%lld"), frame, trIndex, target->Content->frames[frame].TransformDeclarationFlag);
 			target->Content->frames[frame].TransformDeclarationFlag |= static_cast<ETransformDeclarationFlag>(1ull << trIndex);
-
+			UE_LOG(LogCore, Log, TEXT("[KINATEST][Compress]  frame:%i  trIndex:%i trFlag:%lld"), frame, trIndex, target->Content->frames[frame].TransformDeclarationFlag);
+		
 			if (!sameValue)
 			{
 
@@ -849,12 +854,17 @@ void InterpoCompression::DecompressTransforms()
 }
 void InterpoCompression::DecompressBlendshapes()
 {
+	if (!target->Header->hasBlendshapes)
+		return;
+
 	for (uint8 trIndex = 0; trIndex < static_cast<uint8>(EKinanimBlendshape::KB_Count); trIndex++)
 	{
 		unsigned short current = lastNonCompressedBlendshape[trIndex];// "the last time we decompressed this blendshape we were at frame ..."
 
 		if (current > loadedFrameCount)
 			continue;
+
+		current = KINANIM_MAX(current, _maxUncompressedBlendshapes);
 
 		//Usually, beginning frames are empty
 		if (!EnumFlagUtils::ContainFlag(
@@ -863,7 +873,7 @@ void InterpoCompression::DecompressBlendshapes()
 			while (++current < loadedFrameCount)
 			{
 				if (EnumFlagUtils::ContainFlag(
-					static_cast<uint32>(target->Content->frames[current].BlendshapeDeclarationFlag), trIndex))
+					static_cast<uint64>(target->Content->frames[current].BlendshapeDeclarationFlag), trIndex))
 					break;
 			}
 
@@ -886,7 +896,7 @@ void InterpoCompression::DecompressBlendshapes()
 		for (unsigned short frame = current; frame < loadedFrameCount; frame++)
 		{
 			if (EnumFlagUtils::ContainFlag(
-				static_cast<uint32>(target->Content->frames[frame].BlendshapeDeclarationFlag), trIndex))
+				static_cast<uint64>(target->Content->frames[frame].BlendshapeDeclarationFlag), trIndex))
 				frames.push_back(frame);
 		}
 		if (frames.size() < 2)
@@ -899,8 +909,10 @@ void InterpoCompression::DecompressBlendshapes()
 		float floatEnd   = target->Content->frames[end].Blendshapes[trIndex];
 		bool sameValue = KinetixMath1::IsApproximately(floatStart, floatEnd, EPSILON);
 		frames.erase(frames.begin() + 0); //This is to avoid getting caught in the 'if' of the forloop without lerping
+
 		for (unsigned short frame = start + 1; frame < loadedFrameCount; frame++)
 		{
+
 			if (frame == frames[0])
 			{
 				//We arrived on the "end" frame that means our lerping ends here
@@ -928,6 +940,7 @@ void InterpoCompression::DecompressBlendshapes()
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
 			target->Content->frames[frame].BlendshapeDeclarationFlag |= static_cast<EBlendshapeDeclarationFlag>(1ull << trIndex);
 
+
 			if (!sameValue)
 			{
 				target->Content->frames[frame].Blendshapes[trIndex] = KinetixMath1::SLerp(floatStart, floatEnd, static_cast<float>(frame - start) / static_cast<float>(end - start));
@@ -949,17 +962,17 @@ void InterpoCompression::CalculateMaxUncompressedProperties()
 	unsigned short minV = short(65535ul); //default: Max value
 
 	uint8 length = static_cast<uint8>(EKinanimTransform::KT_Count);
-	for (unsigned char i = 0; i < length; i++)
+	for (uint8 i = 0; i < length; i++)
 	{
 		current = lastNonCompressedFrame[i];
 		if (current == 0)
 			continue;
 
-		minV = MIN(current, minV);
+		minV = KINANIM_MIN(current, minV);
 	}
 
 	if (length != 0)
-		_maxUncompressedTransforms = static_cast<long>(minV);
+		_maxUncompressedTransforms = static_cast<int32>(minV);
 	
 	//----------------//
 	// Blendshape     //
@@ -967,15 +980,15 @@ void InterpoCompression::CalculateMaxUncompressedProperties()
 	minV = short(65535ul); //default: Max value
 
 	length = static_cast<uint8>(EKinanimBlendshape::KB_Count);
-	for (unsigned char i = 0; i < length; i++)
+	for (uint8 i = 0; i < length; i++)
 	{
 		current = lastNonCompressedBlendshape[i];
 		if (current == 0)
 			continue;
 
-		minV = MIN(current, minV);
+		minV = KINANIM_MIN(current, minV);
 	}
 
 	if (length != 0)
-		_maxUncompressedBlendshapes = static_cast<long>(minV);
+		_maxUncompressedBlendshapes = static_cast<int32>(minV);
 }

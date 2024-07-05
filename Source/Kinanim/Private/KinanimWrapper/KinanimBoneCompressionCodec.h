@@ -28,6 +28,7 @@ public:
 		const BoneTrackArray& ScalePairs,
 		TArrayView<FTransform>& OutAtoms) const override;
 
+	UPROPERTY()
 	TArray<FRawAnimSequenceTrack> Tracks;
 
 protected:

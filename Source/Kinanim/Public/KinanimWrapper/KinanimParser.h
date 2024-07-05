@@ -8,11 +8,19 @@
 
 #include "CoreMinimal.h"
 
+#include <Kinanim/Private/KinanimImporter.h>
+#include <Kinanim/Private/KinanimData.h>
+#include <Kinanim/Private/KinanimData.h>
+
 #include "KinanimParser.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogKinanimParser, Log, All);
 
 DECLARE_DELEGATE_OneParam(FOnKinanimDownloadComplete, UKinanimDownloader*);
+
+DECLARE_DELEGATE_OneParam(FOnKinanimPlayAvailable, UKinanimDownloader*);
+
+class UKinanimBoneCompressionCodec;
 
 UCLASS()
 class KINANIM_API UKinanimDownloader : public UObject
@@ -21,7 +29,7 @@ class KINANIM_API UKinanimDownloader : public UObject
 
 public:
 	void SetUrl(const FString& InUrl) { Url = InUrl; }
-	void SetImporter(void** InImporter) { Importer = *InImporter; }
+	void SetImporter(void** InImporter) { Importer = (KinanimImporter*)(*InImporter); }
 
 	bool DownloadRemainingFrames();
 
@@ -30,7 +38,8 @@ public:
 	void OnRequestComplete(
 		TSharedPtr<IHttpRequest> HttpRequest,
 		TSharedPtr<IHttpResponse> HttpResponse, bool bSuccess);
-
+	
+	FOnKinanimPlayAvailable OnKinanimPlayAvailable;
 	FOnKinanimDownloadComplete OnKinanimDownloadComplete;
 
 	void* GetImporter() const;
@@ -48,11 +57,11 @@ public:
 
 private:
 	FString Url;
-	void* Importer;
+	KinanimImporter* Importer;
 
 	// Used for the exporter
-	void* UncompressedHeader;
-	void* FinalContent;
+	FKinanimHeader* UncompressedHeader;
+	FKinanimContent* FinalContent;
 
 	int32 FrameCount;
 	int32 ChunkCount;
@@ -63,6 +72,10 @@ private:
 	int32 MinFrameUncompressed;
 
 	FGuid AnimationMetadataID;
+
+	UPROPERTY()
+	UKinanimBoneCompressionCodec* CompressionCodec;
+
 
 	/**
 	 * 

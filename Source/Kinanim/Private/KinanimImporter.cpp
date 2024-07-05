@@ -2,7 +2,6 @@
 
 
 #include "KinanimImporter.h"
-
 #include "CustomHalf.h"
 #include <stdexcept>
 #include <sstream>
@@ -166,7 +165,7 @@ void KinanimImporter::ReadFrame(std::istream* reader)
 	READ_STREAM(reader, ullStreamValue);
 
 	frameData.TransformDeclarationFlag = static_cast<ETransformDeclarationFlag>(ullStreamValue);
-	
+
 	ReadTransform(&frameData, reader);
 	if (result->Header->hasBlendshapes)
 	{
@@ -177,6 +176,8 @@ void KinanimImporter::ReadFrame(std::istream* reader)
 	}
 
 	result->Content->frames[index] = frameData;
+
+	UE_LOG(LogCore, Log, TEXT("[KINATEST][Import]  frame:%i  trFlag:%lld"), index, frameData.TransformDeclarationFlag);
 
 	//Check if we read too much stuff 
 	std::streampos _pointerEnd = reader->tellg();
@@ -335,7 +336,10 @@ void KinanimImporter::ComputeUncompressedFrameSize(int minFrame, int maxFrame)
 	for (int i = minFrame; i <= maxFrame; i++)
 	{
 		//Recompute frame size
-		_uncompressedHeader->frameSizes[i] = result->CalculateFrameSize(result->Content->frames[i]);
+		uint16 size = result->CalculateFrameSize(result->Content->frames[i]);
+		_uncompressedHeader->frameSizes[i] = size;
+
+		UE_LOG(LogCore, Log, TEXT("[KINATEST][CalculateFrameSize]  i:%i size:%i"), i, size);
 	}
 }
 

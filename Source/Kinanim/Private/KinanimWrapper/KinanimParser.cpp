@@ -16,6 +16,7 @@
 #include "Interfaces/IHttpResponse.h"
 
 #include "Kismet/KismetSystemLibrary.h"
+#include <KinanimImporter.h>
 
 DEFINE_LOG_CATEGORY(LogKinanimParser);
 
@@ -152,22 +153,14 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	MinFrameUncompressed = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
 		KinanimWrapper::KinanimImporter_Get_compression(Importer));
 
-	FKinanimHeader* UncompressedHeaderTest = (FKinanimHeader*)KinanimWrapper::KinanimImporter_GetUncompressedHeader(Importer);
+	FKinanimHeader* UncompressedHeaderTest = Importer->GetUncompressedHeader();
 
 	KinanimWrapper::KinanimImporter_ReadFrames(Importer, BinaryStream);
 
-	UncompressedHeaderTest = (FKinanimHeader*)KinanimWrapper::KinanimImporter_GetUncompressedHeader(Importer);
-	uint16 CountTest = UncompressedHeaderTest->GetFrameCount();
-	if (UncompressedHeaderTest == nullptr && CountTest)
-	{
-		UE_LOG(LogKinanimParser, Error, TEXT("ERROR! Failed to get uncompressed header ! %p %i"), UncompressedHeaderTest, CountTest);
-	}
+	UncompressedHeaderTest = Importer->GetUncompressedHeader();
 
 	MaxFrameUncompressed = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
 		KinanimWrapper::KinanimImporter_Get_compression(Importer));
-
-	UE_LOG(LogKinanimParser, Log, TEXT("LoadBatchFrameKinanim(): Decompressed:[%i - %i]"),
-	       MinFrameUncompressed, MaxFrameUncompressed);
 
 	FrameCount = KinanimWrapper::KinanimContent_GetFrameCount(
 		KinanimWrapper::KinanimData_Get_content(KinanimWrapper::KinanimImporter_GetResult(Importer)));
@@ -187,7 +180,10 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		return;
 	}
 
+#if WITH_EDITOR
 	AnimSequence->GetController().OpenBracket(FText::FromString("kinanimRuntime"), false);
+#endif
+
 
 	//Iterate on bones
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
@@ -236,47 +232,57 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 			//All the zombie code are tries to get the rotation and stuff working
 			if (trData.bHasRotation)
 			{
+#if WITH_EDITOR
 				Track.RotKeys.Add(FQuat4f(tr.GetRotation()));
+#else
+				CompressionCodec->Tracks[BoneIndex].RotKeys[j] = FQuat4f(tr.GetRotation());
+#endif
 			}
 			else
 			{
+#if WITH_EDITOR
 				Track.RotKeys.Add(FQuat4f(BoneTransform.GetRotation()));
+#else
+				CompressionCodec->Tracks[BoneIndex].RotKeys[j] = FQuat4f(BoneTransform.GetRotation());
+#endif
 			}
 
 			if (trData.bHasPosition)
 			{
+#if WITH_EDITOR
 				Track.PosKeys.Add(FVector3f(tr.GetLocation()));
+#else
+				CompressionCodec->Tracks[BoneIndex].PosKeys[j] = FVector3f(tr.GetLocation());
+#endif
 			}
 			else
 			{
+#if WITH_EDITOR
 				Track.PosKeys.Add(FVector3f(BoneTransform.GetLocation()));
+#else
+				CompressionCodec->Tracks[BoneIndex].PosKeys[j] = FVector3f(BoneTransform.GetLocation());
+#endif
 			}
 
 			if (trData.bHasScale)
 			{
+#if WITH_EDITOR
 				Track.ScaleKeys.Add(FVector3f(tr.GetScale3D()));
+#else
+				CompressionCodec->Tracks[BoneIndex].ScaleKeys[j] = FVector3f(tr.GetScale3D());
+#endif
 			}
 			else
 			{
+#if WITH_EDITOR
 				Track.ScaleKeys.Add(FVector3f(BoneTransform.GetScale3D()));
+#else
+				CompressionCodec->Tracks[BoneIndex].ScaleKeys[j] = FVector3f(BoneTransform.GetScale3D());
+#endif
 			}
 		}
 
-		// Refresh of the Uncompressed Header
-		// KinanimWrapper::KinanimImporter_ComputeUncompressedFrameSize(
-		// 	Importer,MinFrameUncompressed, MaxFrameUncompressed);
-
 #if WITH_EDITOR
-		// if (CurrentChunk >= ChunkCount)
-		// {
-		// AnimSequence->GetController().AddBoneCurve(BoneName, false);
-		// AnimSequence->GetController().SetBoneTrackKeys(BoneName,
-		//                                                Track.PosKeys,
-		//                                                Track.RotKeys,
-		//                                                Track.ScaleKeys,
-		//                                                false);
-		// }
-
 		if (!AnimSequence->GetController().UpdateBoneTrackKeys(BoneName,
 		                                                       FInt32Range(
 			                                                       FInt32Range::BoundsType::Inclusive(
@@ -294,7 +300,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		}
 		// AnimSequence->GetController().NotifyPopulated();
 #else
-		CompressionCodec->Tracks[BoneIndex] = Track;
+		// CompressionCodec->Tracks[BoneIndex] = Track;
 #endif
 	}
 
@@ -306,14 +312,23 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 
 	if (CurrentChunk >= ChunkCount)
 	{
+		UncompressedHeader = Importer->GetUncompressedHeader();
+		FinalContent = Importer->GetResult()->Content;
 		
-		UncompressedHeader = KinanimWrapper::KinanimImporter_GetUncompressedHeader(Importer);
+#if  !WITH_EDITOR
+		// CompressionCodec->RemoveFromRoot();
+		CompressionCodec = nullptr;
+#endif
 
-		FinalContent =
-			KinanimWrapper::KinanimData_Get_content(
-				KinanimWrapper::KinanimImporter_GetResult(Importer));
+		AnimSequence->PostLoad();
+		
 		OnKinanimDownloadComplete.ExecuteIfBound(this);
 		return;
+	}
+
+	if (CurrentChunk == FMath::Floor(ChunkCount / 2))
+	{
+		OnKinanimPlayAvailable.ExecuteIfBound(this);
 	}
 
 	LoadBatchFrameKinanim();
@@ -331,7 +346,7 @@ void* UKinanimDownloader::GetUncompressedHeader() const
 
 FFrameData* UKinanimDownloader::GetFrames() const
 {
-	return (FFrameData*)Frames.GetData();
+	return Importer->GetResult()->Content->frames;
 }
 
 int32 UKinanimDownloader::GetFrameCount() const
@@ -365,7 +380,7 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		                                  true, FLinearColor::Red);
 		return;
 	}
-	
+
 	//Init framecount / frameRate / duration
 	FrameCount = data->Header->GetFrameCount();
 	if (FrameCount <= 0)
@@ -408,10 +423,24 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	NewAnimSequence->GetController().OpenBracket(FText::FromString("kinanimRuntime"), false);
 	NewAnimSequence->GetController().InitializeModel();
 #else
-	UKinanimBoneCompressionCodec* CompressionCodec = NewObject<UKinanimBoneCompressionCodec>();
+	CompressionCodec = NewObject<UKinanimBoneCompressionCodec>(NewAnimSequence, TEXT("Kinanim"));
 	CompressionCodec->Tracks.AddDefaulted(BonesPoses.Num());
-	AnimSequence->CompressedData.CompressedTrackToSkeletonMapTable.AddDefaulted(BonesPoses.Num());
-	AnimSequence->AddToRoot();
+	NewAnimSequence->CompressedData.CompressedTrackToSkeletonMapTable.AddDefaulted(BonesPoses.Num());
+
+	for (int BoneIndex = 0; BoneIndex < BonesPoses.Num(); ++BoneIndex)
+	{
+		NewAnimSequence->CompressedData.CompressedTrackToSkeletonMapTable[BoneIndex] = BoneIndex;
+		for (int FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
+		{
+			CompressionCodec->Tracks[BoneIndex].PosKeys.Add(FVector3f(BonesPoses[BoneIndex].GetLocation()));
+			CompressionCodec->Tracks[BoneIndex].RotKeys.Add(FQuat4f(BonesPoses[BoneIndex].GetRotation()));
+			CompressionCodec->Tracks[BoneIndex].ScaleKeys.Add(FVector3f(BonesPoses[BoneIndex].GetScale3D()));
+		}
+	}
+	
+	CompressionCodec->AddToRoot();
+	NewAnimSequence->AddToRoot();
+	
 #endif
 
 	//Declare tracks
@@ -515,14 +544,15 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	NewAnimSequence->GetController().SetNumberOfFrames(FrameCount - 1);
 	NewAnimSequence->GetController().NotifyPopulated();
 	NewAnimSequence->GetController().CloseBracket(false);
+
 #else
-	AnimSequence->CompressedData.CompressedDataStructure = MakeUnique<FUECompressedAnimData>();
-	AnimSequence->CompressedData.CompressedDataStructure->CompressedNumberOfKeys = NumFrames;
-	AnimSequence->CompressedData.BoneCompressionCodec = CompressionCodec;
+	NewAnimSequence->CompressedData.CompressedDataStructure = MakeUnique<FUECompressedAnimData>();
+	NewAnimSequence->CompressedData.CompressedDataStructure->CompressedNumberOfKeys = FrameCount;
+	NewAnimSequence->CompressedData.BoneCompressionCodec = CompressionCodec;
 	UKinanimCurveCompressionCodec* AnimCurveCompressionCodec = NewObject<UKinanimCurveCompressionCodec>();
 	AnimCurveCompressionCodec->AnimSequence = AnimSequence;
-	AnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
-	AnimSequence->PostLoad();
+	NewAnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
+	// NewAnimSequence->PostLoad();
 #endif
 
 	AnimSequence = NewAnimSequence;
@@ -705,7 +735,7 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 	FMatrix SceneBasis = BaseTransform.ToMatrixWithScale();
 
 	//Import kinanim file
-	void* Importer = KinanimWrapper::Ctor_KinanimImporter(KinanimWrapper::Ctor_InterpoCompression());
+	KinanimImporter* Importer = new KinanimImporter(new InterpoCompression());
 	if (Importer == nullptr)
 	{
 		UKismetSystemLibrary::PrintString(SkeletalMesh,
