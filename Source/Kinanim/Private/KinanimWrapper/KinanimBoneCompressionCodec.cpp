@@ -2,6 +2,8 @@
 
 #include "KinanimWrapper/KinanimBoneCompressionCodec.h"
 
+#include "KinanimWrapper/KinanimParser.h"
+
 void UKinanimBoneCompressionCodec::DecompressBone(FAnimSequenceDecompressionContext& DecompContext, int32 TrackIndex,
                                                   FTransform& OutAtom) const
 {
@@ -104,6 +106,17 @@ FVector UKinanimBoneCompressionCodec::GetTrackLocation(FAnimSequenceDecompressio
 			DecompContext.GetRelativePosition(),
 			Tracks[TrackIndex].PosKeys.Num(),
 			DecompContext.Interpolation, FrameA, FrameB);
+
+	if (TrackIndex != 0)
+	{
+		UE_LOG(LogKinanimParser, Log,
+		       TEXT("[KinanimBoneCompressionCodec]: Alpha: %f Length:%f Relative Pos:%f Num:%i A:%i B:%i"),
+		       Alpha,
+		       DecompContext.GetPlayableLength(),
+		       DecompContext.GetRelativePosition(),
+		       Tracks[TrackIndex].PosKeys.Num(), FrameA, FrameB);
+	}
+
 	return FMath::Lerp(
 		FVector(Tracks[TrackIndex].PosKeys[FrameA]),
 		FVector(Tracks[TrackIndex].PosKeys[FrameB]), Alpha);
@@ -125,5 +138,4 @@ FVector UKinanimBoneCompressionCodec::GetTrackScale(FAnimSequenceDecompressionCo
 	return FMath::Lerp(
 		FVector(Tracks[TrackIndex].ScaleKeys[FrameA]),
 		FVector(Tracks[TrackIndex].ScaleKeys[FrameB]), Alpha);
-
 }

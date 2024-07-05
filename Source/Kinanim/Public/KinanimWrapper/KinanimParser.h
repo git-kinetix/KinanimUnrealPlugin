@@ -73,9 +73,8 @@ private:
 
 	FGuid AnimationMetadataID;
 
-#if !WITH_EDITOR
+	UPROPERTY()
 	UKinanimBoneCompressionCodec* CompressionCodec;
-#endif
 
 
 	/**

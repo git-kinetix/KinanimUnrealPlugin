@@ -269,7 +269,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 #if WITH_EDITOR
 				Track.ScaleKeys.Add(FVector3f(tr.GetScale3D()));
 #else
-				CompressionCodec->Tracks[BoneIndex].ScaleKeys[j] = FVector3f(tr.GetLocation());
+				CompressionCodec->Tracks[BoneIndex].ScaleKeys[j] = FVector3f(tr.GetScale3D());
 #endif
 			}
 			else
@@ -277,7 +277,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 #if WITH_EDITOR
 				Track.ScaleKeys.Add(FVector3f(BoneTransform.GetScale3D()));
 #else
-				CompressionCodec->Tracks[BoneIndex].ScaleKeys[j] = FVector3f(BoneTransform.GetLocation());
+				CompressionCodec->Tracks[BoneIndex].ScaleKeys[j] = FVector3f(BoneTransform.GetScale3D());
 #endif
 			}
 		}
@@ -300,7 +300,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		}
 		// AnimSequence->GetController().NotifyPopulated();
 #else
-		CompressionCodec->Tracks[BoneIndex] = Track;
+		// CompressionCodec->Tracks[BoneIndex] = Track;
 #endif
 	}
 
@@ -316,9 +316,12 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		FinalContent = Importer->GetResult()->Content;
 		
 #if  !WITH_EDITOR
+		// CompressionCodec->RemoveFromRoot();
 		CompressionCodec = nullptr;
 #endif
 
+		AnimSequence->PostLoad();
+		
 		OnKinanimDownloadComplete.ExecuteIfBound(this);
 		return;
 	}
@@ -420,10 +423,24 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	NewAnimSequence->GetController().OpenBracket(FText::FromString("kinanimRuntime"), false);
 	NewAnimSequence->GetController().InitializeModel();
 #else
-	CompressionCodec = NewObject<UKinanimBoneCompressionCodec>();
+	CompressionCodec = NewObject<UKinanimBoneCompressionCodec>(NewAnimSequence, TEXT("Kinanim"));
 	CompressionCodec->Tracks.AddDefaulted(BonesPoses.Num());
 	NewAnimSequence->CompressedData.CompressedTrackToSkeletonMapTable.AddDefaulted(BonesPoses.Num());
+
+	for (int BoneIndex = 0; BoneIndex < BonesPoses.Num(); ++BoneIndex)
+	{
+		NewAnimSequence->CompressedData.CompressedTrackToSkeletonMapTable[BoneIndex] = BoneIndex;
+		for (int FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
+		{
+			CompressionCodec->Tracks[BoneIndex].PosKeys.Add(FVector3f(BonesPoses[BoneIndex].GetLocation()));
+			CompressionCodec->Tracks[BoneIndex].RotKeys.Add(FQuat4f(BonesPoses[BoneIndex].GetRotation()));
+			CompressionCodec->Tracks[BoneIndex].ScaleKeys.Add(FVector3f(BonesPoses[BoneIndex].GetScale3D()));
+		}
+	}
+	
+	CompressionCodec->AddToRoot();
 	NewAnimSequence->AddToRoot();
+	
 #endif
 
 	//Declare tracks
@@ -535,7 +552,7 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	UKinanimCurveCompressionCodec* AnimCurveCompressionCodec = NewObject<UKinanimCurveCompressionCodec>();
 	AnimCurveCompressionCodec->AnimSequence = AnimSequence;
 	NewAnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
-	NewAnimSequence->PostLoad();
+	// NewAnimSequence->PostLoad();
 #endif
 
 	AnimSequence = NewAnimSequence;
