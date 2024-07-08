@@ -100,8 +100,8 @@ void UKinanimDownloader::LoadBatchFrameKinanim()
 
 	TSharedRef<IHttpRequest> HttpRequest = FHttpModule::Get().CreateRequest();
 	HttpRequest->SetURL(Url);
-	HttpRequest->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
-	HttpRequest->SetHeader("Content-Type", TEXT("application/octet-stream"));
+	HttpRequest->SetHeader(TEXT("User-Agent"), SDKUSERAGENT);
+	HttpRequest->AppendToHeader("Content-Type", TEXT("application/octet-stream"));
 	HttpRequest->SetVerb("GET");
 	HttpRequest->AppendToHeader(
 		TEXT("Range"),

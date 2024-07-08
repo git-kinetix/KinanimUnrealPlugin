@@ -22,6 +22,9 @@ DECLARE_DELEGATE_OneParam(FOnKinanimPlayAvailable, UKinanimDownloader*);
 
 class UKinanimBoneCompressionCodec;
 
+#define SDKUSERAGENT TEXT("SDK-Unreal/0.6")
+
+
 UCLASS()
 class KINANIM_API UKinanimDownloader : public UObject
 {
