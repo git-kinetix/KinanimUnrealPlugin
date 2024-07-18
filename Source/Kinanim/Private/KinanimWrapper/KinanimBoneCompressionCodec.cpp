@@ -107,16 +107,6 @@ FVector UKinanimBoneCompressionCodec::GetTrackLocation(FAnimSequenceDecompressio
 			Tracks[TrackIndex].PosKeys.Num(),
 			DecompContext.Interpolation, FrameA, FrameB);
 
-	if (TrackIndex != 0)
-	{
-		UE_LOG(LogKinanimParser, Log,
-		       TEXT("[KinanimBoneCompressionCodec]: Alpha: %f Length:%f Relative Pos:%f Num:%i A:%i B:%i"),
-		       Alpha,
-		       DecompContext.GetPlayableLength(),
-		       DecompContext.GetRelativePosition(),
-		       Tracks[TrackIndex].PosKeys.Num(), FrameA, FrameB);
-	}
-
 	return FMath::Lerp(
 		FVector(Tracks[TrackIndex].PosKeys[FrameA]),
 		FVector(Tracks[TrackIndex].PosKeys[FrameB]), Alpha);

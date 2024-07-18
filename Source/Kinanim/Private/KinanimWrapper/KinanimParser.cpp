@@ -314,14 +314,14 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	{
 		UncompressedHeader = Importer->GetUncompressedHeader();
 		FinalContent = Importer->GetResult()->Content;
-		
+
 #if  !WITH_EDITOR
 		// CompressionCodec->RemoveFromRoot();
 		CompressionCodec = nullptr;
 #endif
 
 		AnimSequence->PostLoad();
-		
+
 		OnKinanimDownloadComplete.ExecuteIfBound(this);
 		return;
 	}
@@ -475,11 +475,6 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 			continue;
 		}
 
-		UKismetSystemLibrary::PrintString(SkeletalMesh,
-		                                  FString::Printf(TEXT("Found bone '%s' (index: %i)"),
-		                                                  *BoneName.ToString(), BoneIndex), true,
-		                                  true, FLinearColor::Green);
-
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];
 
@@ -554,7 +549,8 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	NewAnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
 	// NewAnimSequence->PostLoad();
 #endif
-
+	
+	BoneMapping = InBoneMapping;
 	AnimSequence = NewAnimSequence;
 	AnimSequence->AddToRoot();
 }
@@ -843,11 +839,6 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 			continue;
 		}
 
-		UKismetSystemLibrary::PrintString(SkeletalMesh,
-		                                  FString::Printf(TEXT("Found bone '%s' (index: %i)"),
-		                                                  *BoneName.ToString(), BoneIndex), true,
-		                                  true, FLinearColor::Green);
-
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];
 
@@ -1021,11 +1012,6 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromImporter(USkeletalMesh* 
 			                                  true, FLinearColor::Yellow);
 			continue;
 		}
-
-		UKismetSystemLibrary::PrintString(SkeletalMesh,
-		                                  FString::Printf(TEXT("Found bone '%s' (index: %i)"),
-		                                                  *BoneName.ToString(), BoneIndex), true,
-		                                  true, FLinearColor::Green);
 
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];

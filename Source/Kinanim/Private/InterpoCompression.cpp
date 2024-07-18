@@ -819,9 +819,7 @@ void InterpoCompression::DecompressTransforms()
 			}
 
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
-			UE_LOG(LogCore, Log, TEXT("[KINATEST][Compress]  frame:%i  trIndex:%i trFlag:%lld"), frame, trIndex, target->Content->frames[frame].TransformDeclarationFlag);
 			target->Content->frames[frame].TransformDeclarationFlag |= static_cast<ETransformDeclarationFlag>(1ull << trIndex);
-			UE_LOG(LogCore, Log, TEXT("[KINATEST][Compress]  frame:%i  trIndex:%i trFlag:%lld"), frame, trIndex, target->Content->frames[frame].TransformDeclarationFlag);
 		
 			if (!sameValue)
 			{

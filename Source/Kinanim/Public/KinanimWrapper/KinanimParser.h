@@ -87,7 +87,7 @@ private:
 	UAnimSequence* AnimSequence;
 
 	UPROPERTY()
-	UKinanimBonesDataAsset* BoneMapping;
+	const UKinanimBonesDataAsset* BoneMapping;
 
 	TArray<FFrameData> Frames;
 };
