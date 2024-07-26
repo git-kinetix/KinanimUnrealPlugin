@@ -207,7 +207,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		int32 BoneIndex = AnimSequence->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(BoneName);
 		if (!AnimSequence->GetSkeleton()->GetReferenceSkeleton().IsValidIndex(BoneIndex))
 		{
-			UE_LOG(LogKinanimParser, Error, TEXT("Couldn't find bone '%s'"), *TrackName);
+			UE_LOG(LogKinanimParser, Log, TEXT("Couldn't find bone '%s'"), *TrackName);
 			continue;
 		}
 
@@ -468,10 +468,10 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		int32 BoneIndex = NewAnimSequence->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(BoneName);
 		if (!NewAnimSequence->GetSkeleton()->GetReferenceSkeleton().IsValidIndex(BoneIndex))
 		{
-			UKismetSystemLibrary::PrintString(SkeletalMesh,
-			                                  FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
-			                                                  *TrackName, static_cast<EKinanimTransform>(i)), true,
-			                                  true, FLinearColor::Yellow);
+			// UKismetSystemLibrary::PrintString(SkeletalMesh,
+			//                                   FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
+			//                                                   *TrackName, static_cast<EKinanimTransform>(i)), true,
+			//                                   true, FLinearColor::Yellow);
 			continue;
 		}
 
@@ -488,12 +488,6 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 			FTransform tr;
 
 			tr = UKinanimParser::ToUnrealTransform(trData);
-			if (i == 0 && j == 100)
-			{
-				UKismetSystemLibrary::PrintString(SkeletalMesh,
-				                                  FString::Printf(TEXT("%s"), *tr.ToHumanReadableString()), true,
-				                                  true, FLinearColor::Yellow);
-			}
 
 			//All the zombie code are tries to get the rotation and stuff working
 			if (trData.bHasRotation)
@@ -832,10 +826,10 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 		int32 BoneIndex = AnimSequence->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(BoneName);
 		if (!AnimSequence->GetSkeleton()->GetReferenceSkeleton().IsValidIndex(BoneIndex))
 		{
-			UKismetSystemLibrary::PrintString(SkeletalMesh,
-			                                  FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
-			                                                  *TrackName, static_cast<EKinanimTransform>(i)), true,
-			                                  true, FLinearColor::Yellow);
+			// UKismetSystemLibrary::PrintString(SkeletalMesh,
+			//                                   FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
+			//                                                   *TrackName, static_cast<EKinanimTransform>(i)), true,
+			//                                   true, FLinearColor::Yellow);
 			continue;
 		}
 
@@ -850,13 +844,6 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 			FTransform tr;
 
 			tr = ToUnrealTransform(trData);
-			if (i == 0 && j == 100)
-			{
-				UKismetSystemLibrary::PrintString(SkeletalMesh,
-				                                  FString::Printf(TEXT("%s"), *tr.ToHumanReadableString()), true,
-				                                  true, FLinearColor::Yellow);
-			}
-
 
 			//All the zombie code are tries to get the rotation and stuff working
 			if (trData.bHasRotation)
@@ -1006,10 +993,10 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromImporter(USkeletalMesh* 
 		int32 BoneIndex = AnimSequence->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(BoneName);
 		if (!AnimSequence->GetSkeleton()->GetReferenceSkeleton().IsValidIndex(BoneIndex))
 		{
-			UKismetSystemLibrary::PrintString(SkeletalMesh,
-			                                  FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
-			                                                  *TrackName, static_cast<EKinanimTransform>(i)), true,
-			                                  true, FLinearColor::Yellow);
+			// UKismetSystemLibrary::PrintString(SkeletalMesh,
+			//                                   FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
+			//                                                   *TrackName, static_cast<EKinanimTransform>(i)), true,
+			//                                   true, FLinearColor::Yellow);
 			continue;
 		}
 
@@ -1024,12 +1011,6 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromImporter(USkeletalMesh* 
 			FTransform tr;
 
 			tr = ToUnrealTransform(trData);
-			if (i == 0 && j == 100)
-			{
-				UKismetSystemLibrary::PrintString(SkeletalMesh,
-				                                  FString::Printf(TEXT("%s"), *tr.ToHumanReadableString()), true,
-				                                  true, FLinearColor::Yellow);
-			}
 
 			//All the zombie code are tries to get the rotation and stuff working
 			if (trData.bHasRotation)
