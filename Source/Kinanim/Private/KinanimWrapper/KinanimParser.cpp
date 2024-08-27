@@ -442,11 +442,6 @@ void* UKinanimDownloader::GetUncompressedHeader() const
 	return UncompressedHeader;
 }
 
-void* UKinanimDownloader::GetContent() const
-{
-	return FinalContent;
-}
-
 FFrameData* UKinanimDownloader::GetFrames() const
 {
 	return Importer->GetResult()->Content->frames;
