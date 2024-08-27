@@ -10,7 +10,6 @@
 
 #include <Kinanim/Private/KinanimImporter.h>
 #include <Kinanim/Private/KinanimData.h>
-#include <Kinanim/Private/KinanimData.h>
 
 #include "KinanimParser.generated.h"
 
@@ -21,6 +20,7 @@ DECLARE_DELEGATE_OneParam(FOnKinanimDownloadComplete, UKinanimDownloader*);
 DECLARE_DELEGATE_OneParam(FOnKinanimPlayAvailable, UKinanimDownloader*);
 
 class UKinanimBoneCompressionCodec;
+class UKinanimBonesDataAsset;
 
 #define SDKUSERAGENT TEXT("SDK-Unreal/0.6")
 
