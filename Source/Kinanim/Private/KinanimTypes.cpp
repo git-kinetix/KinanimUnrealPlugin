@@ -19,5 +19,5 @@ FFrameData FrameDataUtils::Clone(const FFrameData& InFrame)
 		toReturn.Blendshapes[i] = InFrame.Blendshapes[i];
 	}
 
-	return FFrameData();
+	return toReturn;
 }

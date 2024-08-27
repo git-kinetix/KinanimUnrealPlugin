@@ -150,7 +150,7 @@ FKinanimData::FKinanimData(FKinanimHeader* InHeader, FKinanimContent* InContent)
 	this->Header = InHeader;
 	this->Content = InContent;
 	KinanimPointerCollector::CollectPointer(Header); //Still collect just in case
-	KinanimPointerCollector::CollectPointer(Content);//Still collect just in case
+	KinanimPointerCollector::CollectPointer(Content); //Still collect just in case
 }
 
 FKinanimData::~FKinanimData()
@@ -168,8 +168,9 @@ FKinanimData::~FKinanimData()
 
 void FKinanimData::CalculateEveryFrameSize() const
 {
+	
 	const uint16 count = Header->GetFrameCount();
-	for (int32 i = 0; i < count; i++)
+	for (int16 i = 0; i < count; i++)
 	{
 		Header->frameSizes[i] = CalculateFrameSize(Content->frames[i]);
 	}
@@ -180,7 +181,7 @@ uint16 FKinanimData::CalculateFrameSize(FFrameData data) const
 	if (static_cast<uint64>(data.TransformDeclarationFlag) == 0
 		&& static_cast<uint64>(data.BlendshapeDeclarationFlag) == 0)
 		return 0;
-
+	
 	uint16 toReturn =
 		sizeof(uint16) + //Frame ID
 		sizeof(uint64); //Declaration flag
@@ -203,10 +204,12 @@ uint16 FKinanimData::CalculateFrameSize(FFrameData data) const
 	}
 
 	if (!Header->hasBlendshapes)
+	{
 		return toReturn;
+	}
 
 	//Blendshape
-	toReturn += sizeof(uint64); //Declaration flag
+	toReturn += 8; //Declaration flag
 	toReturn += (uint16)(HammingWeight::GetHammingWeightULL(static_cast<uint64>(data.BlendshapeDeclarationFlag)) *
 		CustomHalf::SIZEOF);
 

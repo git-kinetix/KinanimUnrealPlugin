@@ -102,6 +102,7 @@ class KINANIM_API UKinanimParser : public UBlueprintFunctionLibrary
 
 public:
 	static FString KinanimEnumToSamBone(EKinanimTransform KinanimTransform);
+	static FString KinanimEnumToMorphTarget(EKinanimBlendshape KinanimBlendshape);
 
 	static FTransform ToUnrealTransform(const FTransformData& TrData);
 

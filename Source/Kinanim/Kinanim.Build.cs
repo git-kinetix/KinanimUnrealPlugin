@@ -39,8 +39,9 @@ public class Kinanim : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"Slate",
+				"HTTP", 
+				"AnimToTexture", // ... add private dependencies that you statically link with here ...	
 				"SlateCore",
-				"HTTP"// ... add private dependencies that you statically link with here ...	
 			}
 			);
 		

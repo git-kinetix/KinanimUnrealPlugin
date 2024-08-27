@@ -18,6 +18,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include <KinanimImporter.h>
 
+#include "AnimToTextureDataAsset.h"
+
 DEFINE_LOG_CATEGORY(LogKinanimParser);
 
 #pragma region KinanimDownloader
@@ -153,11 +155,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	MinFrameUncompressed = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
 		KinanimWrapper::KinanimImporter_Get_compression(Importer));
 
-	FKinanimHeader* UncompressedHeaderTest = Importer->GetUncompressedHeader();
-
 	KinanimWrapper::KinanimImporter_ReadFrames(Importer, BinaryStream);
-
-	UncompressedHeaderTest = Importer->GetUncompressedHeader();
 
 	MaxFrameUncompressed = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
 		KinanimWrapper::KinanimImporter_Get_compression(Importer));
@@ -184,6 +182,105 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	AnimSequence->GetController().OpenBracket(FText::FromString("kinanimRuntime"), false);
 #endif
 
+		//Iterate on blendshapes
+	TMap<FName, TArray<TPair<float, float>>> MorphTargetCurves;
+	MorphTargetCurves.Reserve(static_cast<uint8>(EKinanimBlendshape::KB_Count));
+	for (uint8 i = 0; i < static_cast<uint8>(EKinanimBlendshape::KB_Count); ++i)
+	{
+		FName MorphTargetName = FName(UKinanimParser::KinanimEnumToMorphTarget(static_cast<EKinanimBlendshape>(i)));
+		TArray<TPair<float, float>> Curves;
+		Curves.SetNumZeroed(FrameCount);
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+#if WITH_EDITOR
+		FAnimationCurveIdentifier CurveId(MorphTargetName, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(MorphTargetName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FSmartName SmartName;
+		if (!AnimSequence->GetSkeleton()->GetSmartNameByName(USkeleton::AnimCurveMappingName, MorphTargetName,
+		                                                     SmartName))
+		{
+			SmartName.DisplayName = MorphTargetName;
+			AnimSequence->GetSkeleton()->VerifySmartName(USkeleton::AnimCurveMappingName, SmartName);
+		}
+
+#if ENGINE_MAJOR_VERSION > 4
+#if WITH_EDITOR
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
+		FAnimationCurveIdentifier CurveId(SmartName, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(AnimSequence->GetDataModel()->GetCurveData());
+		int32 NewCurveIndex = RawCurveData.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &RawCurveData.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		AnimSequence->RawCurveData.AddCurveData(SmartName);
+		FFloatCurve* NewCurve = (FFloatCurve*)AnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#endif
+
+		for (int32 j = MinFrameUncompressed; j <= MaxFrameUncompressed; j++)
+		{
+			FFrameData frame = data->Content->frames[j];
+
+			TPair<float, float> Curve = TPair<float, float>(j / data->Header->frameRate, frame.Blendshapes[i]);
+			Curves.Add(Curve);
+
+			FKeyHandle NewKeyHandle = RichCurve.AddKey(j / data->Header->frameRate, frame.Blendshapes[i], false);
+
+			// UE_LOG(LogKinanimParser, Log, TEXT("Blendshape value: %f"), frame.Blendshapes[i]);
+
+			ERichCurveInterpMode NewInterpMode = RCIM_Linear;
+			ERichCurveTangentMode NewTangentMode = RCTM_Auto;
+			ERichCurveTangentWeightMode NewTangentWeightMode = RCTWM_WeightedNone;
+
+			float LeaveTangent = 0.f;
+			float ArriveTangent = 0.f;
+			float LeaveTangentWeight = 0.f;
+			float ArriveTangentWeight = 0.f;
+
+			RichCurve.SetKeyInterpMode(NewKeyHandle, NewInterpMode);
+			RichCurve.SetKeyTangentMode(NewKeyHandle, NewTangentMode);
+			RichCurve.SetKeyTangentWeightMode(NewKeyHandle, NewTangentWeightMode);
+		}
+
+		MorphTargetCurves.Add(MorphTargetName, Curves);
+
+		AnimSequence->GetSkeleton()->AccumulateCurveMetaData(MorphTargetName, false, true);
+
+#if !WITH_EDITOR
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+		FAnimCompressedCurveIndexedName IndexedName;
+		IndexedName.CurveName = Pair.Key;
+		AnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(Pair.Key))->Type.bMorphtarget = true;
+#else
+		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
+#endif
+#else
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
+		AnimSequence->GetController().SetCurveKeys(CurveId, RichCurve.GetConstRefOfKeys());
+#endif
+#endif
+	}
 
 	//Iterate on bones
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
@@ -218,7 +315,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		{
 			FFrameData frame = data->Content->frames[j];
 			FTransformData trData = frame.Transforms[i];
-
+			
 			FTransform tr;
 
 			Frames[j] = frame;
@@ -312,6 +409,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 
 	if (CurrentChunk >= ChunkCount)
 	{
+		Importer->ComputeUncompressedFrameSize(0, FrameCount - 1);
 		UncompressedHeader = Importer->GetUncompressedHeader();
 		FinalContent = Importer->GetResult()->Content;
 
@@ -443,8 +541,105 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	
 #endif
 
-	//Declare tracks
+	//Iterate on blendshapes
 	TMap<FName, TArray<TPair<float, float>>> MorphTargetCurves;
+	MorphTargetCurves.Reserve(static_cast<uint8>(EKinanimBlendshape::KB_Count));
+	for (uint8 i = 0; i < static_cast<uint8>(EKinanimBlendshape::KB_Count); ++i)
+	{
+		FName MorphTargetName = FName(UKinanimParser::KinanimEnumToMorphTarget(static_cast<EKinanimBlendshape>(i)));
+		TArray<TPair<float, float>> Curves;
+		Curves.SetNumZeroed(FrameCount);
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+#if WITH_EDITOR
+		FAnimationCurveIdentifier CurveId(MorphTargetName, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(MorphTargetName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FSmartName SmartName;
+		if (!NewAnimSequence->GetSkeleton()->GetSmartNameByName(USkeleton::AnimCurveMappingName, MorphTargetName,
+		                                                     SmartName))
+		{
+			SmartName.DisplayName = MorphTargetName;
+			NewAnimSequence->GetSkeleton()->VerifySmartName(USkeleton::AnimCurveMappingName, SmartName);
+		}
+
+#if ENGINE_MAJOR_VERSION > 4
+#if WITH_EDITOR
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
+		FAnimationCurveIdentifier CurveId(SmartName, ERawCurveTrackTypes::RCT_Float);
+		NewAnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(AnimSequence->GetDataModel()->GetCurveData());
+		int32 NewCurveIndex = RawCurveData.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &RawCurveData.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		AnimSequence->RawCurveData.AddCurveData(SmartName);
+		FFloatCurve* NewCurve = (FFloatCurve*)AnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#endif
+
+		for (int j = 0; j < FrameCount; ++j)
+		{
+			FFrameData frame = data->Content->frames[FMath::Clamp(j, 0, MaxFrameUncompressed)];
+
+			TPair<float, float> Curve = TPair<float, float>(j / FrameRate.Numerator, frame.Blendshapes[i]);
+			Curves.Add(Curve);
+
+			FKeyHandle NewKeyHandle = RichCurve.AddKey(j / FrameRate.Numerator, frame.Blendshapes[i], false);
+
+			// UE_LOG(LogKinanimParser, Log, TEXT("Blendshape value: %f"), frame.Blendshapes[i]);
+
+			ERichCurveInterpMode NewInterpMode = RCIM_Linear;
+			ERichCurveTangentMode NewTangentMode = RCTM_Auto;
+			ERichCurveTangentWeightMode NewTangentWeightMode = RCTWM_WeightedNone;
+
+			float LeaveTangent = 0.f;
+			float ArriveTangent = 0.f;
+			float LeaveTangentWeight = 0.f;
+			float ArriveTangentWeight = 0.f;
+
+			RichCurve.SetKeyInterpMode(NewKeyHandle, NewInterpMode);
+			RichCurve.SetKeyTangentMode(NewKeyHandle, NewTangentMode);
+			RichCurve.SetKeyTangentWeightMode(NewKeyHandle, NewTangentWeightMode);
+		}
+
+		MorphTargetCurves.Add(MorphTargetName, Curves);
+
+		NewAnimSequence->GetSkeleton()->AccumulateCurveMetaData(MorphTargetName, false, true);
+
+#if !WITH_EDITOR
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+		FAnimCompressedCurveIndexedName IndexedName;
+		IndexedName.CurveName = Pair.Key;
+		AnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(Pair.Key))->Type.bMorphtarget = true;
+#else
+		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
+#endif
+#else
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
+		NewAnimSequence->GetController().SetCurveKeys(CurveId, RichCurve.GetConstRefOfKeys());
+#endif
+#endif
+	}
 
 	//Iterate on bones
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
@@ -482,7 +677,7 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		{
 			FFrameData frame = data->Content->frames[FMath::Clamp(j, 0, MaxFrameUncompressed)];
 			FTransformData trData = frame.Transforms[i];
-
+			
 			Frames[j] = frame;
 
 			FTransform tr;
@@ -543,7 +738,7 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	NewAnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
 	// NewAnimSequence->PostLoad();
 #endif
-	
+
 	BoneMapping = InBoneMapping;
 	AnimSequence = NewAnimSequence;
 	AnimSequence->AddToRoot();
@@ -665,6 +860,121 @@ FString UKinanimParser::KinanimEnumToSamBone(EKinanimTransform KinanimTransform)
 		return "RightFinger5Proximal";
 	case EKinanimTransform::KT_RightLittleDistal:
 		return "RightFinger5Distal";
+	default:
+		return "";
+	}
+}
+
+FString UKinanimParser::KinanimEnumToMorphTarget(EKinanimBlendshape KinanimBlendshape)
+{
+	switch (KinanimBlendshape)
+	{
+	case EKinanimBlendshape::KB_BrowInnerUp:
+		return "BrowInnerUp";
+	case EKinanimBlendshape::KB_BrowDownLeft:
+		return "BrowDownLeft";
+	case EKinanimBlendshape::KB_BrowDownRight:
+		return "BrowDownRight";
+	case EKinanimBlendshape::KB_BrowOuterUpLeft:
+		return "BrowOuterUpLeft";
+	case EKinanimBlendshape::KB_BrowOuterUpRight:
+		return "BrowOuterUpRight";
+	case EKinanimBlendshape::KB_EyeLookUpLeft:
+		return "EyeLookUpLeft";
+	case EKinanimBlendshape::KB_EyeLookUpRight:
+		return "EyeLookUpRight";
+	case EKinanimBlendshape::KB_EyeLookDownLeft:
+		return "EyeLookDownLeft";
+	case EKinanimBlendshape::KB_EyeLookDownRight:
+		return "EyeLookDownRight";
+	case EKinanimBlendshape::KB_EyeLookInLeft:
+		return "EyeLookInLeft";
+	case EKinanimBlendshape::KB_EyeLookInRight:
+		return "EyeLookInRight";
+	case EKinanimBlendshape::KB_EyeLookOutLeft:
+		return "EyeLookOutLeft";
+	case EKinanimBlendshape::KB_EyeLookOutRight:
+		return "EyeLookOutRight";
+	case EKinanimBlendshape::KB_EyeBlinkLeft:
+		return "EyeBlinkLeft";
+	case EKinanimBlendshape::KB_EyeBlinkRight:
+		return "EyeBlinkRight";
+	case EKinanimBlendshape::KB_EyeSquintRight:
+		return "EyeSquintRight";
+	case EKinanimBlendshape::KB_EyeSquintLeft:
+		return "EyeSquintLeft";
+	case EKinanimBlendshape::KB_EyeWideLeft:
+		return "EyeWideLeft";
+	case EKinanimBlendshape::KB_EyeWideRight:
+		return "EyeWideRight";
+	case EKinanimBlendshape::KB_CheekPuff:
+		return "CheekPuff";
+	case EKinanimBlendshape::KB_CheekSquintLeft:
+		return "CheekSquintLeft";
+	case EKinanimBlendshape::KB_CheekSquintRight:
+		return "CheekSquintRight";
+	case EKinanimBlendshape::KB_NoseSneerLeft:
+		return "NoseSneerLeft";
+	case EKinanimBlendshape::KB_NoseSneerRight:
+		return "NoseSneerRight";
+	case EKinanimBlendshape::KB_JawOpen:
+		return "JawOpen";
+	case EKinanimBlendshape::KB_JawForward:
+		return "JawForward";
+	case EKinanimBlendshape::KB_JawLeft:
+		return "JawLeft";
+	case EKinanimBlendshape::KB_JawRight:
+		return "JawRight";
+	case EKinanimBlendshape::KB_MouthFunnel:
+		return "MouthFunnel";
+	case EKinanimBlendshape::KB_MouthPucker:
+		return "MouthPucker";
+	case EKinanimBlendshape::KB_MouthLeft:
+		return "MouthLeft";
+	case EKinanimBlendshape::KB_MouthRight:
+		return "MouthRight";
+	case EKinanimBlendshape::KB_MouthRollUpper:
+		return "MouthRollUpper";
+	case EKinanimBlendshape::KB_MouthRollLower:
+		return "MouthRollLower";
+	case EKinanimBlendshape::KB_MouthShrugUpper:
+		return "MouthShrugUpper";
+	case EKinanimBlendshape::KB_MouthShrugLower:
+		return "MouthShrugLower";
+	case EKinanimBlendshape::KB_MouthOpen:
+		return "MouthOpen";
+	case EKinanimBlendshape::KB_MouthClose:
+		return "MouthClose";
+	case EKinanimBlendshape::KB_MouthSmileLeft:
+		return "MouthSmileLeft";
+	case EKinanimBlendshape::KB_MouthSmileRight:
+		return "MouthSmileRight";
+	case EKinanimBlendshape::KB_MouthFrownLeft:
+		return "MouthFrownLeft";
+	case EKinanimBlendshape::KB_MouthFrownRight:
+		return "MouthFrownRight";
+	case EKinanimBlendshape::KB_MouthDimpleLeft:
+		return "MouthDimpleLeft";
+	case EKinanimBlendshape::KB_MouthDimpleRight:
+		return "MouthDimpleRight";
+	case EKinanimBlendshape::KB_MouthUpperUpLeft:
+		return "MouthUpperUpLeft";
+	case EKinanimBlendshape::KB_MouthUpperUpRight:
+		return "MouthUpperUpRight";
+	case EKinanimBlendshape::KB_MouthLowerDownLeft:
+		return "MouthLowerDownLeft";
+	case EKinanimBlendshape::KB_MouthLowerDownRight:
+		return "MouthLowerDownRight";
+	case EKinanimBlendshape::KB_MouthPressLeft:
+		return "MouthPressLeft";
+	case EKinanimBlendshape::KB_MouthPressRight:
+		return "MouthPressRight";
+	case EKinanimBlendshape::KB_MouthStretchLeft:
+		return "MouthStretchLeft";
+	case EKinanimBlendshape::KB_MouthStretchRight:
+		return "MouthStretchRight";
+	case EKinanimBlendshape::KB_TongueOut:
+		return "TongueOut";
 	default:
 		return "";
 	}
@@ -800,10 +1110,7 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 	
 	AnimSequence->AddToRoot();
 #endif
-
-	//Declare tracks
-	TMap<FName, TArray<TPair<float, float>>> MorphTargetCurves;
-
+	
 	//Iterate on bones
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
 	{
@@ -882,6 +1189,107 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 #endif
 	}
 
+	//Iterate on blendshapes
+	TMap<FName, TArray<TPair<float, float>>> MorphTargetCurves;
+	MorphTargetCurves.Reserve(static_cast<uint8>(EKinanimBlendshape::KB_Count));
+	for (uint8 i = 0; i < static_cast<uint8>(EKinanimBlendshape::KB_Count); ++i)
+	{
+		FName MorphTargetName = FName(KinanimEnumToMorphTarget(static_cast<EKinanimBlendshape>(i)));
+		TArray<TPair<float, float>> Curves;
+		Curves.SetNumZeroed(NumFrames);
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+#if WITH_EDITOR
+		FAnimationCurveIdentifier CurveId(MorphTargetName, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(MorphTargetName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FSmartName SmartName;
+		if (!AnimSequence->GetSkeleton()->GetSmartNameByName(USkeleton::AnimCurveMappingName, MorphTargetName,
+		                                                     SmartName))
+		{
+			SmartName.DisplayName = MorphTargetName;
+			AnimSequence->GetSkeleton()->VerifySmartName(USkeleton::AnimCurveMappingName, SmartName);
+		}
+
+#if ENGINE_MAJOR_VERSION > 4
+#if WITH_EDITOR
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
+		FAnimationCurveIdentifier CurveId(SmartName, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(AnimSequence->GetDataModel()->GetCurveData());
+		int32 NewCurveIndex = RawCurveData.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &RawCurveData.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		AnimSequence->RawCurveData.AddCurveData(SmartName);
+		FFloatCurve* NewCurve = (FFloatCurve*)AnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#endif
+
+		for (int j = 0; j < NumFrames; ++j)
+		{
+			FFrameData frame = data->Content->frames[j];
+
+			TPair<float, float> Curve = TPair<float, float>(j / FrameRate.Numerator, frame.Blendshapes[i]);
+			Curves.Add(Curve);
+
+			FKeyHandle NewKeyHandle = RichCurve.AddKey(j / FrameRate.Numerator, frame.Blendshapes[i], false);
+
+			// UE_LOG(LogKinanimParser, Log, TEXT("Blendshape value: %f"), frame.Blendshapes[i]);
+
+			ERichCurveInterpMode NewInterpMode = RCIM_Linear;
+			ERichCurveTangentMode NewTangentMode = RCTM_Auto;
+			ERichCurveTangentWeightMode NewTangentWeightMode = RCTWM_WeightedNone;
+
+			float LeaveTangent = 0.f;
+			float ArriveTangent = 0.f;
+			float LeaveTangentWeight = 0.f;
+			float ArriveTangentWeight = 0.f;
+
+			RichCurve.SetKeyInterpMode(NewKeyHandle, NewInterpMode);
+			RichCurve.SetKeyTangentMode(NewKeyHandle, NewTangentMode);
+			RichCurve.SetKeyTangentWeightMode(NewKeyHandle, NewTangentWeightMode);
+		}
+
+		MorphTargetCurves.Add(MorphTargetName, Curves);
+
+		AnimSequence->GetSkeleton()->AccumulateCurveMetaData(MorphTargetName, false, true);
+
+#if !WITH_EDITOR
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+		FAnimCompressedCurveIndexedName IndexedName;
+		IndexedName.CurveName = Pair.Key;
+		AnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(Pair.Key))->Type.bMorphtarget = true;
+#else
+		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
+#endif
+#else
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
+		AnimSequence->GetController().SetCurveKeys(CurveId, RichCurve.GetConstRefOfKeys());
+#endif
+#endif
+	}
+
+	
 #if WITH_EDITOR
 	AnimSequence->GetController().SetFrameRate(FrameRate, false);
 	AnimSequence->GetController().SetNumberOfFrames(NumFrames);
@@ -968,9 +1376,6 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromImporter(USkeletalMesh* 
 	AnimSequence->AddToRoot();
 #endif
 
-	//Declare tracks
-	TMap<FName, TArray<TPair<float, float>>> MorphTargetCurves;
-
 	//Iterate on bones
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
 	{
@@ -1047,6 +1452,71 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromImporter(USkeletalMesh* 
 #else
 		CompressionCodec->Tracks[BoneIndex] = Track;
 #endif
+	}
+
+	//Iterate on blendshapes
+	TMap<FName, TArray<TPair<float, float>>> MorphTargetCurves;
+	MorphTargetCurves.Reserve(static_cast<uint8>(EKinanimBlendshape::KB_Count));
+	for (uint8 i = 0; i < static_cast<uint8>(EKinanimBlendshape::KB_Count); ++i)
+	{
+		FName MorphTargetName = FName(KinanimEnumToMorphTarget(static_cast<EKinanimBlendshape>(i)));
+		TArray<TPair<float, float>> Curves;
+		Curves.SetNumZeroed(NumFrames);
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
+#if WITH_EDITOR
+		FAnimationCurveIdentifier CurveId(MorphTargetName, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(MorphTargetName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FSmartName SmartName;
+		if (!AnimSequence->GetSkeleton()->GetSmartNameByName(USkeleton::AnimCurveMappingName, MorphTargetName,
+		                                                     SmartName))
+		{
+			SmartName.DisplayName = MorphTargetName;
+			AnimSequence->GetSkeleton()->VerifySmartName(USkeleton::AnimCurveMappingName, SmartName);
+		}
+
+#if ENGINE_MAJOR_VERSION > 4
+#if WITH_EDITOR
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
+		FAnimationCurveIdentifier CurveId(SmartName, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->GetController().AddCurve(CurveId);
+		FRichCurve RichCurve;
+#else
+		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(AnimSequence->GetDataModel()->GetCurveData());
+		int32 NewCurveIndex = RawCurveData.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &RawCurveData.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(SmartName, 0));
+		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#else
+		AnimSequence->RawCurveData.AddCurveData(SmartName);
+		FFloatCurve* NewCurve = (FFloatCurve*)AnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
+		FRichCurve& RichCurve = NewCurve->FloatCurve;
+#endif
+#endif
+
+		for (int j = 0; j < NumFrames; ++j)
+		{
+			FFrameData frame = data->Content->frames[j];
+
+			TPair<float, float> Curve = TPair<float, float>(j / FrameRate.Numerator, frame.Blendshapes[i]);
+			Curves.Add(Curve);
+		}
+
+		MorphTargetCurves.Add(MorphTargetName, Curves);
 	}
 
 #if WITH_EDITOR

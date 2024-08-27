@@ -89,7 +89,7 @@ public:
 
 	FKinanimData();
 	~FKinanimData();
-private: 
+	
 	FKinanimData(FKinanimHeader* InHeader, FKinanimContent* InContent);
 		
 public:

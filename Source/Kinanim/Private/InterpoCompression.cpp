@@ -41,14 +41,15 @@ const float MIN_LERP_ACCURACY_FOOT = 0.99f;
 const float InterpoCompression::EPSILON = 1E-7f;
 
 
-template<class T>
+template <class T>
 struct ArrayWithLenght
 {
 public:
 	int length;
 	T* arr;
 
-	T& operator[](int index) {
+	T& operator[](int index)
+	{
 		return arr[index];
 	}
 };
@@ -56,16 +57,16 @@ public:
 /// <summary>
 // A dictionary to get accuracy for specific transform
 // </summary>
-const std::map<EKinanimTransform, float> LERP_ACCURACY = 
+const std::map<EKinanimTransform, float> LERP_ACCURACY =
 {
-	{EKinanimTransform::KT_LeftUpperLeg,  MIN_LERP_ACCURACY_FOOT},
-	{EKinanimTransform::KT_LeftLowerLeg,  MIN_LERP_ACCURACY_FOOT},
-	{EKinanimTransform::KT_LeftFoot,      MIN_LERP_ACCURACY_FOOT},
-	{EKinanimTransform::KT_LeftToes,      MIN_LERP_ACCURACY_FOOT},
+	{EKinanimTransform::KT_LeftUpperLeg, MIN_LERP_ACCURACY_FOOT},
+	{EKinanimTransform::KT_LeftLowerLeg, MIN_LERP_ACCURACY_FOOT},
+	{EKinanimTransform::KT_LeftFoot, MIN_LERP_ACCURACY_FOOT},
+	{EKinanimTransform::KT_LeftToes, MIN_LERP_ACCURACY_FOOT},
 	{EKinanimTransform::KT_RightUpperLeg, MIN_LERP_ACCURACY_FOOT},
 	{EKinanimTransform::KT_RightLowerLeg, MIN_LERP_ACCURACY_FOOT},
-	{EKinanimTransform::KT_RightFoot,     MIN_LERP_ACCURACY_FOOT},
-	{EKinanimTransform::KT_RightToes,     MIN_LERP_ACCURACY_FOOT},
+	{EKinanimTransform::KT_RightFoot, MIN_LERP_ACCURACY_FOOT},
+	{EKinanimTransform::KT_RightToes, MIN_LERP_ACCURACY_FOOT},
 };
 
 const EKinanimTransform transformPriorityOrder[static_cast<unsigned long>(EKinanimTransform::KT_Count)] =
@@ -132,60 +133,60 @@ const EKinanimTransform transformPriorityOrder[static_cast<unsigned long>(EKinan
 /// </summary>
 const std::map<EKinanimTransform, EKinanimTransform> transformParent =
 {
-	{EKinanimTransform::KT_LeftUpperLeg,             EKinanimTransform::KT_Hips},
-	{EKinanimTransform::KT_RightUpperLeg,            EKinanimTransform::KT_Hips},
-	{EKinanimTransform::KT_LeftLowerLeg,             EKinanimTransform::KT_LeftUpperLeg},
-	{EKinanimTransform::KT_RightLowerLeg,            EKinanimTransform::KT_RightUpperLeg},
-	{EKinanimTransform::KT_LeftFoot,                 EKinanimTransform::KT_LeftLowerLeg},
-	{EKinanimTransform::KT_RightFoot,                EKinanimTransform::KT_RightLowerLeg},
-	{EKinanimTransform::KT_LeftToes,                 EKinanimTransform::KT_LeftFoot},
-	{EKinanimTransform::KT_RightToes,                EKinanimTransform::KT_RightFoot},
-	{EKinanimTransform::KT_Spine,                    EKinanimTransform::KT_Hips},
-	{EKinanimTransform::KT_Chest,                    EKinanimTransform::KT_Spine},
-	{EKinanimTransform::KT_UpperChest,               EKinanimTransform::KT_Chest},
-	{EKinanimTransform::KT_Neck,                     EKinanimTransform::KT_UpperChest},
-	{EKinanimTransform::KT_Head,                     EKinanimTransform::KT_Neck},
-	{EKinanimTransform::KT_LeftEye,                  EKinanimTransform::KT_Head},
-	{EKinanimTransform::KT_RightEye,                 EKinanimTransform::KT_Head},
-	{EKinanimTransform::KT_Jaw,                      EKinanimTransform::KT_Head},
-	{EKinanimTransform::KT_LeftShoulder,             EKinanimTransform::KT_UpperChest},
-	{EKinanimTransform::KT_RightShoulder,            EKinanimTransform::KT_UpperChest},
-	{EKinanimTransform::KT_LeftUpperArm,             EKinanimTransform::KT_LeftShoulder},
-	{EKinanimTransform::KT_RightUpperArm,            EKinanimTransform::KT_RightShoulder},
-	{EKinanimTransform::KT_LeftLowerArm,             EKinanimTransform::KT_LeftUpperArm},
-	{EKinanimTransform::KT_RightLowerArm,            EKinanimTransform::KT_RightUpperArm},
-	{EKinanimTransform::KT_LeftHand,                 EKinanimTransform::KT_LeftLowerArm},
-	{EKinanimTransform::KT_RightHand,                EKinanimTransform::KT_RightLowerArm},
-	{EKinanimTransform::KT_LeftThumbProximal,        EKinanimTransform::KT_LeftHand},
-	{EKinanimTransform::KT_LeftThumbIntermediate,    EKinanimTransform::KT_LeftThumbProximal},
-	{EKinanimTransform::KT_LeftThumbDistal,          EKinanimTransform::KT_LeftThumbIntermediate},
-	{EKinanimTransform::KT_LeftIndexProximal,        EKinanimTransform::KT_LeftHand},
-	{EKinanimTransform::KT_LeftIndexIntermediate,    EKinanimTransform::KT_LeftIndexProximal},
-	{EKinanimTransform::KT_LeftIndexDistal,          EKinanimTransform::KT_LeftIndexIntermediate},
-	{EKinanimTransform::KT_LeftMiddleProximal,       EKinanimTransform::KT_LeftHand},
-	{EKinanimTransform::KT_LeftMiddleIntermediate,   EKinanimTransform::KT_LeftMiddleProximal},
-	{EKinanimTransform::KT_LeftMiddleDistal,         EKinanimTransform::KT_LeftMiddleIntermediate},
-	{EKinanimTransform::KT_LeftRingProximal,         EKinanimTransform::KT_LeftHand},
-	{EKinanimTransform::KT_LeftRingIntermediate,     EKinanimTransform::KT_LeftRingProximal},
-	{EKinanimTransform::KT_LeftRingDistal,           EKinanimTransform::KT_LeftRingIntermediate},
-	{EKinanimTransform::KT_LeftLittleProximal,       EKinanimTransform::KT_LeftHand},
-	{EKinanimTransform::KT_LeftLittleIntermediate,   EKinanimTransform::KT_LeftLittleProximal},
-	{EKinanimTransform::KT_LeftLittleDistal,         EKinanimTransform::KT_LeftLittleIntermediate},
-	{EKinanimTransform::KT_RightThumbProximal,       EKinanimTransform::KT_RightHand},
-	{EKinanimTransform::KT_RightThumbIntermediate,   EKinanimTransform::KT_RightThumbProximal},
-	{EKinanimTransform::KT_RightThumbDistal,         EKinanimTransform::KT_RightThumbIntermediate},
-	{EKinanimTransform::KT_RightIndexProximal,       EKinanimTransform::KT_RightHand},
-	{EKinanimTransform::KT_RightIndexIntermediate,   EKinanimTransform::KT_RightIndexProximal},
-	{EKinanimTransform::KT_RightIndexDistal,         EKinanimTransform::KT_RightIndexIntermediate},
-	{EKinanimTransform::KT_RightMiddleProximal,      EKinanimTransform::KT_RightHand},
-	{EKinanimTransform::KT_RightMiddleIntermediate,  EKinanimTransform::KT_RightMiddleProximal},
-	{EKinanimTransform::KT_RightMiddleDistal,        EKinanimTransform::KT_RightMiddleIntermediate},
-	{EKinanimTransform::KT_RightRingProximal,        EKinanimTransform::KT_RightHand},
-	{EKinanimTransform::KT_RightRingIntermediate,    EKinanimTransform::KT_RightRingProximal},
-	{EKinanimTransform::KT_RightRingDistal,          EKinanimTransform::KT_RightRingIntermediate},
-	{EKinanimTransform::KT_RightLittleProximal,      EKinanimTransform::KT_RightHand},
-	{EKinanimTransform::KT_RightLittleIntermediate,  EKinanimTransform::KT_RightLittleProximal},
-	{EKinanimTransform::KT_RightLittleDistal,        EKinanimTransform::KT_RightLittleIntermediate},
+	{EKinanimTransform::KT_LeftUpperLeg, EKinanimTransform::KT_Hips},
+	{EKinanimTransform::KT_RightUpperLeg, EKinanimTransform::KT_Hips},
+	{EKinanimTransform::KT_LeftLowerLeg, EKinanimTransform::KT_LeftUpperLeg},
+	{EKinanimTransform::KT_RightLowerLeg, EKinanimTransform::KT_RightUpperLeg},
+	{EKinanimTransform::KT_LeftFoot, EKinanimTransform::KT_LeftLowerLeg},
+	{EKinanimTransform::KT_RightFoot, EKinanimTransform::KT_RightLowerLeg},
+	{EKinanimTransform::KT_LeftToes, EKinanimTransform::KT_LeftFoot},
+	{EKinanimTransform::KT_RightToes, EKinanimTransform::KT_RightFoot},
+	{EKinanimTransform::KT_Spine, EKinanimTransform::KT_Hips},
+	{EKinanimTransform::KT_Chest, EKinanimTransform::KT_Spine},
+	{EKinanimTransform::KT_UpperChest, EKinanimTransform::KT_Chest},
+	{EKinanimTransform::KT_Neck, EKinanimTransform::KT_UpperChest},
+	{EKinanimTransform::KT_Head, EKinanimTransform::KT_Neck},
+	{EKinanimTransform::KT_LeftEye, EKinanimTransform::KT_Head},
+	{EKinanimTransform::KT_RightEye, EKinanimTransform::KT_Head},
+	{EKinanimTransform::KT_Jaw, EKinanimTransform::KT_Head},
+	{EKinanimTransform::KT_LeftShoulder, EKinanimTransform::KT_UpperChest},
+	{EKinanimTransform::KT_RightShoulder, EKinanimTransform::KT_UpperChest},
+	{EKinanimTransform::KT_LeftUpperArm, EKinanimTransform::KT_LeftShoulder},
+	{EKinanimTransform::KT_RightUpperArm, EKinanimTransform::KT_RightShoulder},
+	{EKinanimTransform::KT_LeftLowerArm, EKinanimTransform::KT_LeftUpperArm},
+	{EKinanimTransform::KT_RightLowerArm, EKinanimTransform::KT_RightUpperArm},
+	{EKinanimTransform::KT_LeftHand, EKinanimTransform::KT_LeftLowerArm},
+	{EKinanimTransform::KT_RightHand, EKinanimTransform::KT_RightLowerArm},
+	{EKinanimTransform::KT_LeftThumbProximal, EKinanimTransform::KT_LeftHand},
+	{EKinanimTransform::KT_LeftThumbIntermediate, EKinanimTransform::KT_LeftThumbProximal},
+	{EKinanimTransform::KT_LeftThumbDistal, EKinanimTransform::KT_LeftThumbIntermediate},
+	{EKinanimTransform::KT_LeftIndexProximal, EKinanimTransform::KT_LeftHand},
+	{EKinanimTransform::KT_LeftIndexIntermediate, EKinanimTransform::KT_LeftIndexProximal},
+	{EKinanimTransform::KT_LeftIndexDistal, EKinanimTransform::KT_LeftIndexIntermediate},
+	{EKinanimTransform::KT_LeftMiddleProximal, EKinanimTransform::KT_LeftHand},
+	{EKinanimTransform::KT_LeftMiddleIntermediate, EKinanimTransform::KT_LeftMiddleProximal},
+	{EKinanimTransform::KT_LeftMiddleDistal, EKinanimTransform::KT_LeftMiddleIntermediate},
+	{EKinanimTransform::KT_LeftRingProximal, EKinanimTransform::KT_LeftHand},
+	{EKinanimTransform::KT_LeftRingIntermediate, EKinanimTransform::KT_LeftRingProximal},
+	{EKinanimTransform::KT_LeftRingDistal, EKinanimTransform::KT_LeftRingIntermediate},
+	{EKinanimTransform::KT_LeftLittleProximal, EKinanimTransform::KT_LeftHand},
+	{EKinanimTransform::KT_LeftLittleIntermediate, EKinanimTransform::KT_LeftLittleProximal},
+	{EKinanimTransform::KT_LeftLittleDistal, EKinanimTransform::KT_LeftLittleIntermediate},
+	{EKinanimTransform::KT_RightThumbProximal, EKinanimTransform::KT_RightHand},
+	{EKinanimTransform::KT_RightThumbIntermediate, EKinanimTransform::KT_RightThumbProximal},
+	{EKinanimTransform::KT_RightThumbDistal, EKinanimTransform::KT_RightThumbIntermediate},
+	{EKinanimTransform::KT_RightIndexProximal, EKinanimTransform::KT_RightHand},
+	{EKinanimTransform::KT_RightIndexIntermediate, EKinanimTransform::KT_RightIndexProximal},
+	{EKinanimTransform::KT_RightIndexDistal, EKinanimTransform::KT_RightIndexIntermediate},
+	{EKinanimTransform::KT_RightMiddleProximal, EKinanimTransform::KT_RightHand},
+	{EKinanimTransform::KT_RightMiddleIntermediate, EKinanimTransform::KT_RightMiddleProximal},
+	{EKinanimTransform::KT_RightMiddleDistal, EKinanimTransform::KT_RightMiddleIntermediate},
+	{EKinanimTransform::KT_RightRingProximal, EKinanimTransform::KT_RightHand},
+	{EKinanimTransform::KT_RightRingIntermediate, EKinanimTransform::KT_RightRingProximal},
+	{EKinanimTransform::KT_RightRingDistal, EKinanimTransform::KT_RightRingIntermediate},
+	{EKinanimTransform::KT_RightLittleProximal, EKinanimTransform::KT_RightHand},
+	{EKinanimTransform::KT_RightLittleIntermediate, EKinanimTransform::KT_RightLittleProximal},
+	{EKinanimTransform::KT_RightLittleDistal, EKinanimTransform::KT_RightLittleIntermediate},
 };
 
 /// <summary>
@@ -193,100 +194,191 @@ const std::map<EKinanimTransform, EKinanimTransform> transformParent =
 /// </summary>
 const std::map<EKinanimTransform, ArrayWithLenght<EKinanimTransform>> transformChildren =
 {
-	{EKinanimTransform::KT_LeftHand,                {5, new EKinanimTransform[5]{EKinanimTransform::KT_LeftThumbProximal ,EKinanimTransform::KT_LeftIndexProximal ,EKinanimTransform::KT_LeftMiddleProximal ,EKinanimTransform::KT_LeftRingProximal ,EKinanimTransform::KT_LeftLittleProximal} }},
-	{EKinanimTransform::KT_RightHand,               {5, new EKinanimTransform[5]{EKinanimTransform::KT_RightThumbProximal ,EKinanimTransform::KT_RightIndexProximal ,EKinanimTransform::KT_RightMiddleProximal ,EKinanimTransform::KT_RightRingProximal ,EKinanimTransform::KT_RightLittleProximal} }},
-	{EKinanimTransform::KT_UpperChest,              {3, new EKinanimTransform[3]{EKinanimTransform::KT_Neck ,EKinanimTransform::KT_LeftShoulder ,EKinanimTransform::KT_RightShoulder} }},
-	{EKinanimTransform::KT_Head,                    {3, new EKinanimTransform[3]{EKinanimTransform::KT_LeftEye ,EKinanimTransform::KT_RightEye ,EKinanimTransform::KT_Jaw} }},
-	{EKinanimTransform::KT_LeftUpperLeg,            {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLowerLeg} }},
-	{EKinanimTransform::KT_RightUpperLeg,           {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLowerLeg} }},
-	{EKinanimTransform::KT_LeftLowerLeg,            {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftFoot} }},
-	{EKinanimTransform::KT_RightLowerLeg,           {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightFoot} }},
-	{EKinanimTransform::KT_LeftFoot,                {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftToes} }},
-	{EKinanimTransform::KT_RightFoot,               {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightToes} }},
-	{EKinanimTransform::KT_Spine,                   {1, new EKinanimTransform[1]{EKinanimTransform::KT_Chest} }},
-	{EKinanimTransform::KT_Chest,                   {1, new EKinanimTransform[1]{EKinanimTransform::KT_UpperChest} }},
-	{EKinanimTransform::KT_Neck,                    {1, new EKinanimTransform[1]{EKinanimTransform::KT_Head} }},
-	{EKinanimTransform::KT_LeftShoulder,            {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftUpperArm} }},
-	{EKinanimTransform::KT_RightShoulder,           {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightUpperArm} }},
-	{EKinanimTransform::KT_LeftUpperArm,            {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLowerArm} }},
-	{EKinanimTransform::KT_RightUpperArm,           {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLowerArm} }},
-	{EKinanimTransform::KT_LeftLowerArm,            {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftHand} }},
-	{EKinanimTransform::KT_RightLowerArm,           {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightHand} }},
-	{EKinanimTransform::KT_LeftThumbProximal,       {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftThumbIntermediate} }},
-	{EKinanimTransform::KT_LeftThumbIntermediate,   {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftThumbDistal} }},
-	{EKinanimTransform::KT_LeftIndexProximal,       {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftIndexIntermediate} }},
-	{EKinanimTransform::KT_LeftIndexIntermediate,   {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftIndexDistal} }},
-	{EKinanimTransform::KT_LeftMiddleProximal,      {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftMiddleIntermediate} }},
-	{EKinanimTransform::KT_LeftMiddleIntermediate,  {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftMiddleDistal} }},
-	{EKinanimTransform::KT_LeftRingProximal,        {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftRingIntermediate} }},
-	{EKinanimTransform::KT_LeftRingIntermediate,    {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftRingDistal} }},
-	{EKinanimTransform::KT_LeftLittleProximal,      {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLittleIntermediate} }},
-	{EKinanimTransform::KT_LeftLittleIntermediate,  {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLittleDistal} }},
-	{EKinanimTransform::KT_RightThumbProximal,      {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightThumbIntermediate} }},
-	{EKinanimTransform::KT_RightThumbIntermediate,  {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightThumbDistal} }},
-	{EKinanimTransform::KT_RightIndexProximal,      {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightIndexIntermediate} }},
-	{EKinanimTransform::KT_RightIndexIntermediate,  {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightIndexDistal} }},
-	{EKinanimTransform::KT_RightMiddleProximal,     {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightMiddleIntermediate} }},
-	{EKinanimTransform::KT_RightMiddleIntermediate, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightMiddleDistal} }},
-	{EKinanimTransform::KT_RightRingProximal,       {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightRingIntermediate} }},
-	{EKinanimTransform::KT_RightRingIntermediate,   {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightRingDistal} }},
-	{EKinanimTransform::KT_RightLittleProximal,     {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLittleIntermediate} }},
-	{EKinanimTransform::KT_RightLittleIntermediate, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLittleDistal} }},
-	{EKinanimTransform::KT_Jaw,                     {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_LeftEye,                 {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_RightEye,                {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_RightToes,               {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_LeftToes,                {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_LeftThumbDistal,         {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_LeftIndexDistal,         {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_LeftMiddleDistal,        {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_LeftRingDistal,          {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_LeftLittleDistal,        {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_RightThumbDistal,        {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_RightIndexDistal,        {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_RightMiddleDistal,       {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_RightRingDistal,         {0, new EKinanimTransform[0]{} }},
-	{EKinanimTransform::KT_RightLittleDistal,       {0, new EKinanimTransform[0]{} }}
+	{
+		EKinanimTransform::KT_LeftHand,
+		{
+			5,
+			new EKinanimTransform[5]{
+				EKinanimTransform::KT_LeftThumbProximal, EKinanimTransform::KT_LeftIndexProximal,
+				EKinanimTransform::KT_LeftMiddleProximal, EKinanimTransform::KT_LeftRingProximal,
+				EKinanimTransform::KT_LeftLittleProximal
+			}
+		}
+	},
+	{
+		EKinanimTransform::KT_RightHand,
+		{
+			5,
+			new EKinanimTransform[5]{
+				EKinanimTransform::KT_RightThumbProximal, EKinanimTransform::KT_RightIndexProximal,
+				EKinanimTransform::KT_RightMiddleProximal, EKinanimTransform::KT_RightRingProximal,
+				EKinanimTransform::KT_RightLittleProximal
+			}
+		}
+	},
+	{
+		EKinanimTransform::KT_UpperChest,
+		{
+			3,
+			new EKinanimTransform[3]{
+				EKinanimTransform::KT_Neck, EKinanimTransform::KT_LeftShoulder, EKinanimTransform::KT_RightShoulder
+			}
+		}
+	},
+	{
+		EKinanimTransform::KT_Head,
+		{
+			3,
+			new EKinanimTransform[3]{
+				EKinanimTransform::KT_LeftEye, EKinanimTransform::KT_RightEye, EKinanimTransform::KT_Jaw
+			}
+		}
+	},
+	{EKinanimTransform::KT_LeftUpperLeg, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLowerLeg}}},
+	{EKinanimTransform::KT_RightUpperLeg, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLowerLeg}}},
+	{EKinanimTransform::KT_LeftLowerLeg, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftFoot}}},
+	{EKinanimTransform::KT_RightLowerLeg, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightFoot}}},
+	{EKinanimTransform::KT_LeftFoot, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftToes}}},
+	{EKinanimTransform::KT_RightFoot, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightToes}}},
+	{EKinanimTransform::KT_Spine, {1, new EKinanimTransform[1]{EKinanimTransform::KT_Chest}}},
+	{EKinanimTransform::KT_Chest, {1, new EKinanimTransform[1]{EKinanimTransform::KT_UpperChest}}},
+	{EKinanimTransform::KT_Neck, {1, new EKinanimTransform[1]{EKinanimTransform::KT_Head}}},
+	{EKinanimTransform::KT_LeftShoulder, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftUpperArm}}},
+	{EKinanimTransform::KT_RightShoulder, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightUpperArm}}},
+	{EKinanimTransform::KT_LeftUpperArm, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLowerArm}}},
+	{EKinanimTransform::KT_RightUpperArm, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLowerArm}}},
+	{EKinanimTransform::KT_LeftLowerArm, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftHand}}},
+	{EKinanimTransform::KT_RightLowerArm, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightHand}}},
+	{
+		EKinanimTransform::KT_LeftThumbProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftThumbIntermediate}}
+	},
+	{EKinanimTransform::KT_LeftThumbIntermediate, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftThumbDistal}}},
+	{
+		EKinanimTransform::KT_LeftIndexProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftIndexIntermediate}}
+	},
+	{EKinanimTransform::KT_LeftIndexIntermediate, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftIndexDistal}}},
+	{
+		EKinanimTransform::KT_LeftMiddleProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftMiddleIntermediate}}
+	},
+	{
+		EKinanimTransform::KT_LeftMiddleIntermediate,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftMiddleDistal}}
+	},
+	{EKinanimTransform::KT_LeftRingProximal, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftRingIntermediate}}},
+	{EKinanimTransform::KT_LeftRingIntermediate, {1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftRingDistal}}},
+	{
+		EKinanimTransform::KT_LeftLittleProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLittleIntermediate}}
+	},
+	{
+		EKinanimTransform::KT_LeftLittleIntermediate,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_LeftLittleDistal}}
+	},
+	{
+		EKinanimTransform::KT_RightThumbProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightThumbIntermediate}}
+	},
+	{
+		EKinanimTransform::KT_RightThumbIntermediate,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightThumbDistal}}
+	},
+	{
+		EKinanimTransform::KT_RightIndexProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightIndexIntermediate}}
+	},
+	{
+		EKinanimTransform::KT_RightIndexIntermediate,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightIndexDistal}}
+	},
+	{
+		EKinanimTransform::KT_RightMiddleProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightMiddleIntermediate}}
+	},
+	{
+		EKinanimTransform::KT_RightMiddleIntermediate,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightMiddleDistal}}
+	},
+	{
+		EKinanimTransform::KT_RightRingProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightRingIntermediate}}
+	},
+	{EKinanimTransform::KT_RightRingIntermediate, {1, new EKinanimTransform[1]{EKinanimTransform::KT_RightRingDistal}}},
+	{
+		EKinanimTransform::KT_RightLittleProximal,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLittleIntermediate}}
+	},
+	{
+		EKinanimTransform::KT_RightLittleIntermediate,
+		{1, new EKinanimTransform[1]{EKinanimTransform::KT_RightLittleDistal}}
+	},
+	{EKinanimTransform::KT_Jaw, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_LeftEye, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_RightEye, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_RightToes, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_LeftToes, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_LeftThumbDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_LeftIndexDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_LeftMiddleDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_LeftRingDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_LeftLittleDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_RightThumbDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_RightIndexDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_RightMiddleDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_RightRingDistal, {0, new EKinanimTransform[0]{}}},
+	{EKinanimTransform::KT_RightLittleDistal, {0, new EKinanimTransform[0]{}}}
 };
 
 /// <summary>
 /// Get the accuracy of each child end bone in global context
 /// </summary>
-ArrayWithLenght<float> GlobalAccuracyInternal(EKinanimTransform tr, FFrameData originalFrame, FFrameData originalFramePrevious, FVector4f compareValue, FVector4f compareValuePrevious, FVector4f* originalValue = nullptr, FVector4f* originalValuePrevious = nullptr)
+ArrayWithLenght<float> GlobalAccuracyInternal(EKinanimTransform tr, FFrameData originalFrame,
+                                              FFrameData originalFramePrevious, FVector4f compareValue,
+                                              FVector4f compareValuePrevious, FVector4f* originalValue = nullptr,
+                                              FVector4f* originalValuePrevious = nullptr)
 {
 	//Rotation
 	bool rotation_hasValue = originalValue != nullptr;
-	FVector4f rotation = rotation_hasValue ? *originalValue : originalFrame.Transforms[static_cast<uint32>(tr)].Rotation;
+	FVector4f rotation = rotation_hasValue
+		                     ? *originalValue
+		                     : originalFrame.Transforms[static_cast<uint32>(tr)].Rotation;
 	//RotationPrevious
 	bool rotationPrevious_hasValue = originalValuePrevious != nullptr;
-	FVector4f rotationPrevious = rotation_hasValue ? *originalValuePrevious : originalFramePrevious.Transforms[static_cast<uint32>(tr)].Rotation;
+	FVector4f rotationPrevious = rotation_hasValue
+		                             ? *originalValuePrevious
+		                             : originalFramePrevious.Transforms[static_cast<uint32>(tr)].Rotation;
 
-	auto Linq = [tr, originalFrame, originalFramePrevious, compareValue, compareValuePrevious, rotation, rotation_hasValue, rotationPrevious, rotationPrevious_hasValue](EKinanimTransform tr2)
+	auto Linq = [tr, originalFrame, originalFramePrevious, compareValue, compareValuePrevious, rotation,
+			rotation_hasValue, rotationPrevious, rotationPrevious_hasValue](EKinanimTransform tr2)
+	{
+		//Basically : "child rotation in original parent context" and then call recursion
+		FVector4f newCompare = compareValue;
+		DEFINE_NULLABLE_ROTATION(rotation2, originalFrame.Transforms[static_cast<uint32>(tr2)]);
+		FVector4f newComparePrevious = compareValuePrevious;
+		DEFINE_NULLABLE_ROTATION(rotation2Previous, originalFrame.Transforms[static_cast<uint32>(tr2)]);
+
+		if (rotation2_hasValue)
 		{
-			//Basically : "child rotation in original parent context" and then call recursion
-			FVector4f newCompare = compareValue;
-			DEFINE_NULLABLE_ROTATION(rotation2, originalFrame.Transforms[static_cast<uint32>(tr2)]);
-			FVector4f newComparePrevious = compareValuePrevious;
-			DEFINE_NULLABLE_ROTATION(rotation2Previous, originalFrame.Transforms[static_cast<uint32>(tr2)]);
+			newCompare = KinetixMath4::QuatMulp(compareValue, rotation2);
 
-			if (rotation2_hasValue)
-			{
-				newCompare = KinetixMath4::QuatMulp(compareValue, rotation2);
+			rotation2 = KinetixMath4::QuatMulp(rotation_hasValue ? rotation : FVector4f{0, 0, 0, 1}, rotation2);
 
-				rotation2 = KinetixMath4::QuatMulp(rotation_hasValue ? rotation : FVector4f{0, 0, 0, 1}, rotation2);
-
-				newComparePrevious = KinetixMath4::QuatMulp(compareValuePrevious, rotation2Previous);
-				rotation2Previous = KinetixMath4::QuatMulp(rotationPrevious_hasValue ? rotationPrevious : FVector4f{0, 0, 0, 1}, rotation2Previous);
-			}
-			else
-			{
-				rotation2 = rotation;
-				rotation2Previous = rotationPrevious;
-			}
+			newComparePrevious = KinetixMath4::QuatMulp(compareValuePrevious, rotation2Previous);
+			rotation2Previous = KinetixMath4::QuatMulp(
+				rotationPrevious_hasValue ? rotationPrevious : FVector4f{0, 0, 0, 1}, rotation2Previous);
+		}
+		else
+		{
+			rotation2 = rotation;
+			rotation2Previous = rotationPrevious;
+		}
 
 
-			return GlobalAccuracyInternal(tr2, originalFrame, originalFramePrevious, newCompare, compareValuePrevious, &rotation2, &rotation2Previous);
-		};
+		return GlobalAccuracyInternal(tr2, originalFrame, originalFramePrevious, newCompare, compareValuePrevious,
+		                              &rotation2, &rotation2Previous);
+	};
 
 	//This is a end bone, we can do a return
 	if (transformChildren.at(tr).length == 0)
@@ -294,9 +386,16 @@ ArrayWithLenght<float> GlobalAccuracyInternal(EKinanimTransform tr, FFrameData o
 		if (!rotation_hasValue) //Current frames doesn't contain any value even in parents
 			return {0, nullptr};
 		else if (!rotationPrevious_hasValue) //Next frame doesn't contain any value even in parents
-			return {1, new float[1] { KinetixMath4::Accuracy(rotation, compareValue) }};
+			return {1, new float[1]{KinetixMath4::Accuracy(rotation, compareValue)}};
 		else //Compare the quantity of movement between the 2 frames
-			return {1, new float[1] { 1 - std::abs(KinetixMath4::Accuracy(compareValuePrevious, compareValue) - KinetixMath4::Accuracy(rotation, rotationPrevious)) }};
+			return {
+				1,
+				new float[1]{
+					1 - std::abs(
+						KinetixMath4::Accuracy(compareValuePrevious, compareValue) - KinetixMath4::Accuracy(
+							rotation, rotationPrevious))
+				}
+			};
 	}
 
 	std::vector<float> toReturnVector;
@@ -312,17 +411,18 @@ ArrayWithLenght<float> GlobalAccuracyInternal(EKinanimTransform tr, FFrameData o
 
 	ArrayWithLenght<float> toReturn = {(int)toReturnVector.size(), new float[(int)toReturnVector.size()]};
 	std::memcpy(toReturn.arr, toReturnVector.data(), toReturnVector.size());
-	
+
 	return toReturn;
 }
 
 /// <summary>
 /// Get the accuracy of each child end bone in global context and average them
 /// </summary>
-float GlobalAccuracy(EKinanimTransform tr, FFrameData originalFrame, FFrameData originalFramePrevious, FVector4f compareValue, FVector4f compareValuePrevious)
+float GlobalAccuracy(EKinanimTransform tr, FFrameData originalFrame, FFrameData originalFramePrevious,
+                     FVector4f compareValue, FVector4f compareValuePrevious)
 {
-
-	ArrayWithLenght<float> floats = GlobalAccuracyInternal(tr, originalFrame, originalFramePrevious, compareValue, compareValuePrevious);
+	ArrayWithLenght<float> floats = GlobalAccuracyInternal(tr, originalFrame, originalFramePrevious, compareValue,
+	                                                       compareValuePrevious);
 	if (floats.length == 0)
 		return 1;
 
@@ -347,9 +447,9 @@ InterpoCompression::~InterpoCompression()
 
 int32 InterpoCompression::GetMaxUncompressedFrame()
 {
-	return target->Header->hasBlendshapes ? 
-		KINANIM_MIN(GetMaxUncompressedTransforms(), GetMaxUncompressedBlendshapes()) :
-		GetMaxUncompressedTransforms();
+	return target->Header->hasBlendshapes
+		       ? KINANIM_MIN(GetMaxUncompressedTransforms(), GetMaxUncompressedBlendshapes())
+		       : GetMaxUncompressedTransforms();
 }
 
 int32 InterpoCompression::GetMaxUncompressedTransforms()
@@ -464,9 +564,10 @@ void InterpoCompression::Compress()
 	int compressableBlendshape = 0;
 	for (int i = 0; i < frameCount; i++)
 	{
-		compressableBlendshape += HammingWeight::GetHammingWeightULL(static_cast<uint64>(frames[0].BlendshapeDeclarationFlag));
+		compressableBlendshape += HammingWeight::GetHammingWeightULL(
+			static_cast<uint64>(frames[0].BlendshapeDeclarationFlag));
 	}
-	
+
 	unsigned short numberOfFrameCut = 0;
 	if (threshold != 0)
 		CompressTransforms(numberOfFrameCut, frameCount);
@@ -481,7 +582,7 @@ void InterpoCompression::CompressTransforms(unsigned short& numberOfFrameCut, in
 {
 	FKinanimContent* uncompressed = target->Content->Clone();
 
-	FKinanimHeader*  header = target->Header;
+	FKinanimHeader* header = target->Header;
 	FKinanimContent* content = target->Content;
 
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
@@ -511,9 +612,9 @@ void InterpoCompression::CompressTransforms(unsigned short& numberOfFrameCut, in
 		std::vector<int> interpolableFrames;
 		for (int iStart = 0; iStart < frameCount; iStart++)
 		{
-
 			FVector4f startV4 = targetContent->frames[iStart].Transforms[static_cast<uint32>(tr)].Rotation;
-			if (!EnumFlagUtils::ContainFlag(static_cast<uint64>(targetContent->frames[iStart].TransformDeclarationFlag), static_cast<uint8>(tr)))
+			if (!EnumFlagUtils::ContainFlag(static_cast<uint64>(targetContent->frames[iStart].TransformDeclarationFlag),
+			                                static_cast<uint8>(tr)))
 				continue;
 
 			int endFrame = KINANIM_MIN(maxFramePerLerp + iStart, frameCount - 1);
@@ -544,8 +645,9 @@ void InterpoCompression::CompressTransforms(unsigned short& numberOfFrameCut, in
 				for (int lerpI = iEnd - 1; lerpI > iStart; lerpI--)
 				{
 					//Check if lerpable
-					currentLerpR          = targetContent->frames[lerpI].Transforms[static_cast<uint32>(tr)].Rotation;
-					currentLerpR_HasValue = targetContent->frames[lerpI].Transforms[static_cast<uint32>(tr)].bHasRotation;
+					currentLerpR = targetContent->frames[lerpI].Transforms[static_cast<uint32>(tr)].Rotation;
+					currentLerpR_HasValue = targetContent->frames[lerpI].Transforms[static_cast<uint32>(tr)].
+						bHasRotation;
 					if (!currentLerpR_HasValue)
 					{
 						if (lastFrameHaveNoValue)
@@ -559,12 +661,12 @@ void InterpoCompression::CompressTransforms(unsigned short& numberOfFrameCut, in
 					//Compare the difference of the distances from "startV4"
 					// It's like |(uncompressed[i] - start) - (lerp[i] - start)| 
 					currentAccuracy = GlobalAccuracy(tr, uncompressed->frames[lerpI], uncompressed->frames[iStart],
-						KinetixMath4::SLerp(
-							startV4,
-							endV4,
-							(float)(lerpI - iStart) / (iEnd - iStart)
-						),
-						startV4
+					                                 KinetixMath4::SLerp(
+						                                 startV4,
+						                                 endV4,
+						                                 (float)(lerpI - iStart) / (iEnd - iStart)
+					                                 ),
+					                                 startV4
 					);
 
 					if (currentAccuracy < minAccuracy) //Don't allow an accuracy to be too low
@@ -580,7 +682,8 @@ void InterpoCompression::CompressTransforms(unsigned short& numberOfFrameCut, in
 
 				accuracyAverage /= (iEnd - iStart - 1);
 
-				if (lastFrameHaveNoValue || !(accuracyAverage >= 1 - movementThreshold)) //If interpolation isn't aprox the same, we can't compress with these iEnd / iStart params.
+				if (lastFrameHaveNoValue || !(accuracyAverage >= 1 - movementThreshold))
+				//If interpolation isn't aprox the same, we can't compress with these iEnd / iStart params.
 				{
 				}
 				else
@@ -596,7 +699,8 @@ void InterpoCompression::CompressTransforms(unsigned short& numberOfFrameCut, in
 
 				for (int frame = iStart + 1; frame < highestFrame; frame++)
 				{
-					EnumFlagUtils::RemoveFlagTr(target->Content->frames[frame].TransformDeclarationFlag, static_cast<uint8>(tr));
+					EnumFlagUtils::RemoveFlagTr(target->Content->frames[frame].TransformDeclarationFlag,
+					                            static_cast<uint8>(tr));
 					target->Content->frames[frame].Transforms[static_cast<uint32>(tr)].bHasRotation = false;
 					++numberOfFrameCut;
 				}
@@ -626,12 +730,12 @@ void InterpoCompression::CompressBlendshapes(unsigned short& numberOfFrameCut, i
 				break;
 
 			interpolableFrames.clear();
-			for (int j = (countFrame)-1; j >= 0; j--)
+			for (int j = (countFrame) - 1; j >= 0; j--)
 			{
 				int iEnd = iStart + 2 + j; //iStart+2 because a lerp from frame 0 to frame 1 is useless
 				float endF = target->Content->frames[iEnd].Blendshapes[iBl];
 				if (!EnumFlagUtils::ContainFlag(
-					static_cast<uint64>(target->Content->frames[iEnd].BlendshapeDeclarationFlag), iBl)) 
+					static_cast<uint64>(target->Content->frames[iEnd].BlendshapeDeclarationFlag), iBl))
 				{
 					interpolableFrames.insert(interpolableFrames.begin(), iEnd);
 					continue;
@@ -681,7 +785,8 @@ void InterpoCompression::CompressBlendshapes(unsigned short& numberOfFrameCut, i
 
 				accuracyAverage /= (iEnd - iStart - 1);
 
-				if (lastFrameHaveNoValue || !(accuracyAverage >= 1 - blendshapeThrshold)) //If interpolation isn't aprox the same, we can't compress with these iEnd / iStart params.
+				if (lastFrameHaveNoValue || !(accuracyAverage >= 1 - blendshapeThrshold))
+				//If interpolation isn't aprox the same, we can't compress with these iEnd / iStart params.
 				{
 				}
 				else
@@ -711,7 +816,7 @@ void InterpoCompression::CompressBlendshapes(unsigned short& numberOfFrameCut, i
 void InterpoCompression::DecompressFrame(unsigned short InLoadedFrameCount)
 {
 	this->loadedFrameCount += InLoadedFrameCount;
-	
+
 	DecompressTransforms();
 	DecompressBlendshapes();
 
@@ -739,13 +844,14 @@ void InterpoCompression::DecompressTransforms()
 		if (target->Header->KeyTypes[trIndex] != EKeyType::KT_Rotation)
 			continue;
 
-		uint16 current = lastNonCompressedFrame[trIndex];// "the last time we decompressed this transform we were at frame ..."
+		uint16 current = lastNonCompressedFrame[trIndex];
+		// "the last time we decompressed this transform we were at frame ..."
 		// Check all next declared transform
 
 		if (current >= loadedFrameCount)
 			continue;
 
-		current = KINANIM_MAX(current, _maxUncompressedTransforms);
+		// current = KINANIM_MAX(current, _maxUncompressedTransforms);
 
 		//Sometimes, beginning frames are empty
 		if (!EnumFlagUtils::ContainFlag(
@@ -791,6 +897,7 @@ void InterpoCompression::DecompressTransforms()
 		bool sameValue = KinetixMath4::IsApproximately(v4Start, v4End, EPSILON);
 		frames.erase(frames.begin() + 0); //This is to avoid getting caught in the 'if' of the forloop without lerping
 
+		
 		for (uint16 frame = start + uint16(1); frame < loadedFrameCount; frame++)
 		{
 			if (frame == frames[0])
@@ -818,17 +925,23 @@ void InterpoCompression::DecompressTransforms()
 				continue;
 			}
 
+			FFrameData CurrentFrame = target->Content->frames[frame];
+			UE_LOG(LogTemp, Log, TEXT("Declaration Flag Before %lld"),
+			       target->Content->frames[frame].TransformDeclarationFlag)
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
-			target->Content->frames[frame].TransformDeclarationFlag |= static_cast<ETransformDeclarationFlag>(1ull << trIndex);
-		
+			target->Content->frames[frame].TransformDeclarationFlag |=
+				static_cast<ETransformDeclarationFlag>(static_cast<uint64>(1) << trIndex);
+			UE_LOG(LogTemp, Log, TEXT("Declaration Flag AFTER %lld"),
+			       target->Content->frames[frame].TransformDeclarationFlag)
+
 			if (!sameValue)
 			{
-
 				target->Content->frames[frame].Transforms[trIndex] = FTransformData
 				{
-					{0.f,0.f,0.f},
-					KinetixMath4::SLerp(v4Start, v4End, static_cast<float>(frame - start) / static_cast<float>(end - start)),
-					{0.f,0.f,0.f},
+					{0.f, 0.f, 0.f},
+					KinetixMath4::SLerp(v4Start, v4End,
+					                    static_cast<float>(frame - start) / static_cast<float>(end - start)),
+					{0.f, 0.f, 0.f},
 					false,
 					true,
 					false
@@ -838,9 +951,9 @@ void InterpoCompression::DecompressTransforms()
 			{
 				target->Content->frames[frame].Transforms[trIndex] = FTransformData
 				{
-					{0.f,0.f,0.f},
+					{0.f, 0.f, 0.f},
 					v4Start,
-					{0.f,0.f,0.f},
+					{0.f, 0.f, 0.f},
 
 					false,
 					true,
@@ -848,8 +961,10 @@ void InterpoCompression::DecompressTransforms()
 				};
 			}
 		}
+		UE_LOG(LogTemp, Log, TEXT("----------END---------"));
 	}
 }
+
 void InterpoCompression::DecompressBlendshapes()
 {
 	if (!target->Header->hasBlendshapes)
@@ -857,7 +972,8 @@ void InterpoCompression::DecompressBlendshapes()
 
 	for (uint8 trIndex = 0; trIndex < static_cast<uint8>(EKinanimBlendshape::KB_Count); trIndex++)
 	{
-		unsigned short current = lastNonCompressedBlendshape[trIndex];// "the last time we decompressed this blendshape we were at frame ..."
+		unsigned short current = lastNonCompressedBlendshape[trIndex];
+		// "the last time we decompressed this blendshape we were at frame ..."
 
 		if (current > loadedFrameCount)
 			continue;
@@ -904,13 +1020,12 @@ void InterpoCompression::DecompressBlendshapes()
 		unsigned short start = frames[0];
 		unsigned short end = frames[1];
 		float floatStart = target->Content->frames[start].Blendshapes[trIndex];
-		float floatEnd   = target->Content->frames[end].Blendshapes[trIndex];
+		float floatEnd = target->Content->frames[end].Blendshapes[trIndex];
 		bool sameValue = KinetixMath1::IsApproximately(floatStart, floatEnd, EPSILON);
 		frames.erase(frames.begin() + 0); //This is to avoid getting caught in the 'if' of the forloop without lerping
 
 		for (unsigned short frame = start + 1; frame < loadedFrameCount; frame++)
 		{
-
 			if (frame == frames[0])
 			{
 				//We arrived on the "end" frame that means our lerping ends here
@@ -936,12 +1051,14 @@ void InterpoCompression::DecompressBlendshapes()
 			}
 
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
-			target->Content->frames[frame].BlendshapeDeclarationFlag |= static_cast<EBlendshapeDeclarationFlag>(1ull << trIndex);
+			target->Content->frames[frame].BlendshapeDeclarationFlag |= static_cast<EBlendshapeDeclarationFlag>(1ull <<
+				trIndex);
 
 
 			if (!sameValue)
 			{
-				target->Content->frames[frame].Blendshapes[trIndex] = KinetixMath1::SLerp(floatStart, floatEnd, static_cast<float>(frame - start) / static_cast<float>(end - start));
+				target->Content->frames[frame].Blendshapes[trIndex] = KinetixMath1::SLerp(
+					floatStart, floatEnd, static_cast<float>(frame - start) / static_cast<float>(end - start));
 			}
 			else
 			{
@@ -971,7 +1088,7 @@ void InterpoCompression::CalculateMaxUncompressedProperties()
 
 	if (length != 0)
 		_maxUncompressedTransforms = static_cast<int32>(minV);
-	
+
 	//----------------//
 	// Blendshape     //
 	//----------------//
