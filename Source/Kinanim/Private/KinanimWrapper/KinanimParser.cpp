@@ -12,13 +12,10 @@
 #include "KinanimBoneCompressionCodec.h"
 #include "KinanimBonesDataAsset.h"
 #include "KinanimCurveCompressionCodec.h"
-#include "KinanimExporter.h"
 #include "Interfaces/IHttpResponse.h"
 
 #include "Kismet/KismetSystemLibrary.h"
 #include <KinanimImporter.h>
-
-#include "AnimToTextureDataAsset.h"
 
 DEFINE_LOG_CATEGORY(LogKinanimParser);
 
@@ -268,9 +265,10 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 #if !WITH_EDITOR
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 		FAnimCompressedCurveIndexedName IndexedName;
-		IndexedName.CurveName = Pair.Key;
+		IndexedName.CurveName = MorphTargetName;
 		AnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
-		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(Pair.Key))->Type.bMorphtarget = true;
+		const_cast<FCurveMetaData*>(
+			AnimSequence->GetSkeleton()->GetCurveMetaData(MorphTargetName))->Type.bMorphtarget = true;
 #else
 		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
 		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
@@ -553,10 +551,10 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 #if WITH_EDITOR
 		FAnimationCurveIdentifier CurveId(MorphTargetName, ERawCurveTrackTypes::RCT_Float);
-		AnimSequence->GetController().AddCurve(CurveId);
+		NewAnimSequence->GetController().AddCurve(CurveId);
 		FRichCurve RichCurve;
 #else
-		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(NewAnimSequence->GetCurveData());
 		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(MorphTargetName, 0));
 		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
@@ -577,20 +575,20 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		NewAnimSequence->GetController().AddCurve(CurveId);
 		FRichCurve RichCurve;
 #else
-		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(AnimSequence->GetDataModel()->GetCurveData());
+		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(NewAnimSequence->GetDataModel()->GetCurveData());
 		int32 NewCurveIndex = RawCurveData.FloatCurves.Add(FFloatCurve(SmartName, 0));
 		FFloatCurve* NewCurve = &RawCurveData.FloatCurves[NewCurveIndex];
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
 #endif
 #else
-		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(NewAnimSequence->GetCurveData());
 		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(SmartName, 0));
 		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
 #endif
 #else
-		AnimSequence->RawCurveData.AddCurveData(SmartName);
-		FFloatCurve* NewCurve = (FFloatCurve*)AnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
+		NewAnimSequence->RawCurveData.AddCurveData(SmartName);
+		FFloatCurve* NewCurve = (FFloatCurve*)NewAnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
 #endif
 #endif
@@ -627,9 +625,10 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 #if !WITH_EDITOR
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 		FAnimCompressedCurveIndexedName IndexedName;
-		IndexedName.CurveName = Pair.Key;
-		AnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
-		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(Pair.Key))->Type.bMorphtarget = true;
+		IndexedName.CurveName = MorphTargetName;
+		NewAnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
+		const_cast<FCurveMetaData*>(
+			NewAnimSequence->GetSkeleton()->GetCurveMetaData(MorphTargetName))->Type.bMorphtarget = true;
 #else
 		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
 		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
@@ -1275,9 +1274,9 @@ UAnimSequence* UKinanimParser::LoadSkeletalAnimationFromStream(USkeletalMesh* Sk
 #if !WITH_EDITOR
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 		FAnimCompressedCurveIndexedName IndexedName;
-		IndexedName.CurveName = Pair.Key;
+		IndexedName.CurveName = MorphTargetName;
 		AnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
-		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(Pair.Key))->Type.bMorphtarget = true;
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(MorphTargetName))->Type.bMorphtarget = true;
 #else
 		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
 		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
