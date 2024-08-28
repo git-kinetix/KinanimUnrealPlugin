@@ -40,7 +40,6 @@ public class Kinanim : ModuleRules
 				"Engine",
 				"Slate",
 				"HTTP", 
-				"AnimToTexture", // ... add private dependencies that you statically link with here ...	
 				"SlateCore",
 			}
 			);
