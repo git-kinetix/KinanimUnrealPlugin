@@ -21,6 +21,7 @@ DECLARE_DELEGATE_OneParam(FOnKinanimDownloadComplete, UKinanimDownloader*);
 DECLARE_DELEGATE_OneParam(FOnKinanimPlayAvailable, UKinanimDownloader*);
 
 class UKinanimBoneCompressionCodec;
+class UKinanimBonesDataAsset;
 
 #define SDKUSERAGENT TEXT("SDK-Unreal/0.6")
 
@@ -41,9 +42,11 @@ public:
 	void OnRequestComplete(
 		TSharedPtr<IHttpRequest> HttpRequest,
 		TSharedPtr<IHttpResponse> HttpResponse, bool bSuccess);
-	
+
 	FOnKinanimPlayAvailable OnKinanimPlayAvailable;
 	FOnKinanimDownloadComplete OnKinanimDownloadComplete;
+	
+	bool bBlendshapesEnabled;
 
 	void* GetImporter() const;
 	void* GetUncompressedHeader() const;
@@ -53,6 +56,8 @@ public:
 	
 	void SetAnimationMetadataID(const FGuid& InID);
 	const FGuid& GetAnimationMetadataID() const;
+	
+	void SetBlendshapesEnabled(bool& bInBlendshapesEnabled);
 
 	UAnimSequence* GetAnimationSequence() const;
 
@@ -107,7 +112,7 @@ public:
 	static FTransform ToUnrealTransform(const FTransformData& TrData);
 
 	static UAnimSequence* LoadSkeletalAnimationFromStream(
-		USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping);
+		USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping, bool bEnableBlandshapes);
 
 	static UAnimSequence* LoadSkeletalAnimationFromImporter(
 		USkeletalMesh* SkeletalMesh, void* Importer, const UKinanimBonesDataAsset* InBoneMapping);
