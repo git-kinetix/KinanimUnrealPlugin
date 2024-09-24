@@ -926,13 +926,9 @@ void InterpoCompression::DecompressTransforms()
 			}
 
 			FFrameData CurrentFrame = target->Content->frames[frame];
-			UE_LOG(LogTemp, Log, TEXT("Declaration Flag Before %lld"),
-			       target->Content->frames[frame].TransformDeclarationFlag)
 			//Tell the kinanim that this frame now exist and execute the SLerp from 'start' to 'end'
 			target->Content->frames[frame].TransformDeclarationFlag |=
 				static_cast<ETransformDeclarationFlag>(static_cast<uint64>(1) << trIndex);
-			UE_LOG(LogTemp, Log, TEXT("Declaration Flag AFTER %lld"),
-			       target->Content->frames[frame].TransformDeclarationFlag)
 
 			if (!sameValue)
 			{
@@ -961,7 +957,6 @@ void InterpoCompression::DecompressTransforms()
 				};
 			}
 		}
-		UE_LOG(LogTemp, Log, TEXT("----------END---------"));
 	}
 }
 
