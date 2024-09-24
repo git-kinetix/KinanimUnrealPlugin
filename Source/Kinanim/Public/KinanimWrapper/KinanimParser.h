@@ -112,7 +112,7 @@ public:
 	static FTransform ToUnrealTransform(const FTransformData& TrData);
 
 	static UAnimSequence* LoadSkeletalAnimationFromStream(
-		USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping, bool bEnableBlandshapes);
+		USkeletalMesh* SkeletalMesh, void* Stream, const UKinanimBonesDataAsset* InBoneMapping, bool bEnableBlandshapes = false);
 
 	static UAnimSequence* LoadSkeletalAnimationFromImporter(
 		USkeletalMesh* SkeletalMesh, void* Importer, const UKinanimBonesDataAsset* InBoneMapping);
