@@ -634,8 +634,8 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		const_cast<FCurveMetaData*>(
 			NewAnimSequence->GetSkeleton()->GetCurveMetaData(MorphTargetName))->Type.bMorphtarget = true;
 #else
-		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
-		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
+		NewAnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
+		const_cast<FCurveMetaData*>(NewAnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
 #endif
 #else
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
