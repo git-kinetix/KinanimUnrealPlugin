@@ -124,12 +124,12 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		|| !EHttpResponseCodes::IsOk(HttpResponse->GetResponseCode()))
 		return;
 
-	FString StringResponse = HttpResponse->GetContentAsString();
-	if (!StringResponse.IsEmpty())
-	{
-		UE_LOG(LogKinanimParser, Log, TEXT("OnRequestComplete(): received %s bytes from server"),
-		       *StringResponse);
-	}
+	// FString StringResponse = HttpResponse->GetContentAsString();
+	// if (!StringResponse.IsEmpty())
+	// {
+	// 	UE_LOG(LogKinanimParser, Log, TEXT("OnRequestComplete(): received %s bytes from server"),
+	// 	       *StringResponse);
+	// }
 
 	const TArray<uint8> JsonContent = HttpResponse->GetContent();
 	UE_LOG(LogKinanimParser, Log, TEXT("OnRequestComplete(): received %d bytes from server"),
@@ -174,7 +174,12 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		UE_LOG(LogKinanimParser, Error, TEXT("ERROR! Failed to open kinanim stream !"));
 		return;
 	}
-	
+
+#if WITH_EDITOR
+	AnimSequence->GetController().OpenBracket(FText::FromString(TEXT("KinanimUpdate")));
+#endif
+
+
 	//Iterate on blendshapes
 	if (bBlendshapesEnabled)
 	{
@@ -316,10 +321,10 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 			Frames[j] = frame;
 
 			tr = UKinanimParser::ToUnrealTransform(trData);
-			if (i == 0 && j == 100)
-			{
-				UE_LOG(LogKinanimParser, Log, TEXT("%s"), *tr.ToHumanReadableString());
-			}
+			// if (i == 0 && j == 100)
+			// {
+			// 	UE_LOG(LogKinanimParser, Log, TEXT("%s"), *tr.ToHumanReadableString());
+			// }
 
 			//All the zombie code are tries to get the rotation and stuff working
 			if (trData.bHasRotation)
@@ -375,12 +380,11 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		}
 
 #if WITH_EDITOR
+		UE_LOG(LogKinanimParser, Warning, TEXT("%i %i %i %i %i"),Track.PosKeys.Num(), Track.RotKeys.Num(), Track.ScaleKeys.Num(), MinFrameUncompressed, MaxFrameUncompressed);
 		if (!AnimSequence->GetController().UpdateBoneTrackKeys(BoneName,
 		                                                       FInt32Range(
-			                                                       FInt32Range::BoundsType::Inclusive(
-				                                                       MinFrameUncompressed),
-			                                                       FInt32Range::BoundsType::Inclusive(
-				                                                       MaxFrameUncompressed)),
+		                                                       	FInt32RangeBound::Inclusive(MinFrameUncompressed),
+		                                                       	FInt32RangeBound::Inclusive(MaxFrameUncompressed -1)),
 		                                                       Track.PosKeys,
 		                                                       Track.RotKeys,
 		                                                       Track.ScaleKeys, false))
@@ -391,6 +395,10 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		}
 #endif
 	}
+
+#if WITH_EDITOR
+	AnimSequence->GetController().CloseBracket();
+#endif
 
 	if (CurrentChunk >= ChunkCount)
 	{
@@ -487,21 +495,21 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	float Duration = FrameCount / data->Header->frameRate;
 
 	//Create sequence
-	UAnimSequence* NewAnimSequence = NewObject<UAnimSequence>(GetTransientPackage(), NAME_None, RF_Public);
+	AnimSequence = NewObject<UAnimSequence>(GetTransientPackage(), NAME_None, RF_Public);
 
 	//Init with mesh
-	NewAnimSequence->SetSkeleton(SkeletalMesh->GetSkeleton());
-	NewAnimSequence->SetPreviewMesh(SkeletalMesh);
+	AnimSequence->SetSkeleton(SkeletalMesh->GetSkeleton());
+	AnimSequence->SetPreviewMesh(SkeletalMesh);
 
-	const TArray<FTransform> BonesPoses = NewAnimSequence->GetSkeleton()->GetReferenceSkeleton().GetRefBonePose();
+	const TArray<FTransform> BonesPoses = AnimSequence->GetSkeleton()->GetReferenceSkeleton().GetRefBonePose();
 
 	// Use reflection to find the property field related to the AnimSequence's duration
 	FFloatProperty* FloatProperty = CastField<FFloatProperty>(
 		UAnimSequence::StaticClass()->FindPropertyByName(TEXT("SequenceLength")));
-	FloatProperty->SetPropertyValue_InContainer(NewAnimSequence, Duration);
+	FloatProperty->SetPropertyValue_InContainer(AnimSequence, Duration);
 
-	NewAnimSequence->bEnableRootMotion = false;
-	NewAnimSequence->RootMotionRootLock = ERootMotionRootLock::RefPose;
+	AnimSequence->bEnableRootMotion = false;
+	AnimSequence->RootMotionRootLock = ERootMotionRootLock::RefPose;
 
 	MaxFrameUncompressed = KinanimWrapper::InterpoCompression_GetMaxUncompressedFrame(
 		KinanimWrapper::KinanimImporter_Get_compression(Importer));
@@ -509,8 +517,8 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		MaxFrameUncompressed = KinanimWrapper::KinanimImporter_GetHighestImportedFrame(Importer);
 
 #if WITH_EDITOR
-	NewAnimSequence->GetController().OpenBracket(FText::FromString("kinanimRuntime"), false);
-	NewAnimSequence->GetController().InitializeModel();
+	AnimSequence->GetController().OpenBracket(FText::FromString("kinanimRuntime"), false);
+	AnimSequence->GetController().InitializeModel();
 #else
 	CompressionCodec = NewObject<UKinanimBoneCompressionCodec>(NewAnimSequence, TEXT("Kinanim"));
 	CompressionCodec->Tracks.AddDefaulted(BonesPoses.Num());
@@ -556,34 +564,34 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 #endif
 #else
 			FSmartName SmartName;
-			if (!NewAnimSequence->GetSkeleton()->GetSmartNameByName(USkeleton::AnimCurveMappingName, MorphTargetName,
+			if (!AnimSequence->GetSkeleton()->GetSmartNameByName(USkeleton::AnimCurveMappingName, MorphTargetName,
 			                                                        SmartName))
 			{
 				SmartName.DisplayName = MorphTargetName;
-				NewAnimSequence->GetSkeleton()->VerifySmartName(USkeleton::AnimCurveMappingName, SmartName);
+				AnimSequence->GetSkeleton()->VerifySmartName(USkeleton::AnimCurveMappingName, SmartName);
 			}
 
 #if ENGINE_MAJOR_VERSION > 4
 #if WITH_EDITOR
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
 			FAnimationCurveIdentifier CurveId(SmartName, ERawCurveTrackTypes::RCT_Float);
-			NewAnimSequence->GetController().AddCurve(CurveId);
+			AnimSequence->GetController().AddCurve(CurveId);
 			FRichCurve RichCurve;
 #else
-		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(NewAnimSequence->GetDataModel()->GetCurveData());
+		FAnimationCurveData& RawCurveData = const_cast<FAnimationCurveData&>(AnimSequence->GetDataModel()->GetCurveData());
 		int32 NewCurveIndex = RawCurveData.FloatCurves.Add(FFloatCurve(SmartName, 0));
 		FFloatCurve* NewCurve = &RawCurveData.FloatCurves[NewCurveIndex];
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
 #endif
 #else
-		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(NewAnimSequence->GetCurveData());
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
 		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(SmartName, 0));
 		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
 #endif
 #else
-		NewAnimSequence->RawCurveData.AddCurveData(SmartName);
-		FFloatCurve* NewCurve = (FFloatCurve*)NewAnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
+		AnimSequence->RawCurveData.AddCurveData(SmartName);
+		FFloatCurve* NewCurve = (FFloatCurve*)AnimSequence->RawCurveData.GetCurveData(SmartName.UID, ERawCurveTrackTypes::RCT_Float);
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
 #endif
 #endif
@@ -613,22 +621,22 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 
 			MorphTargetCurves.Add(MorphTargetName, Curves);
 
-			NewAnimSequence->GetSkeleton()->AccumulateCurveMetaData(MorphTargetName, false, true);
+			AnimSequence->GetSkeleton()->AccumulateCurveMetaData(MorphTargetName, false, true);
 
 #if !WITH_EDITOR
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 		FAnimCompressedCurveIndexedName IndexedName;
 		IndexedName.CurveName = MorphTargetName;
-		NewAnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
+		AnimSequence->CompressedData.IndexedCurveNames.Add(IndexedName);
 		const_cast<FCurveMetaData*>(
-			NewAnimSequence->GetSkeleton()->GetCurveMetaData(MorphTargetName))->Type.bMorphtarget = true;
+			AnimSequence->GetSkeleton()->GetCurveMetaData(MorphTargetName))->Type.bMorphtarget = true;
 #else
-		NewAnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
-		const_cast<FCurveMetaData*>(NewAnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
+		AnimSequence->CompressedData.CompressedCurveNames.Add(SmartName);
+		const_cast<FCurveMetaData*>(AnimSequence->GetSkeleton()->GetCurveMetaData(SmartName.UID))->Type.bMorphtarget = true;
 #endif
 #else
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 2
-			NewAnimSequence->GetController().SetCurveKeys(CurveId, RichCurve.GetConstRefOfKeys());
+			AnimSequence->GetController().SetCurveKeys(CurveId, RichCurve.GetConstRefOfKeys());
 #endif
 #endif
 		}
@@ -653,8 +661,8 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		FRawAnimSequenceTrack Track = FRawAnimSequenceTrack();
 
 		//Get and check bone index
-		int32 BoneIndex = NewAnimSequence->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(BoneName);
-		if (!NewAnimSequence->GetSkeleton()->GetReferenceSkeleton().IsValidIndex(BoneIndex))
+		int32 BoneIndex = AnimSequence->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(BoneName);
+		if (!AnimSequence->GetSkeleton()->GetReferenceSkeleton().IsValidIndex(BoneIndex))
 		{
 			// UKismetSystemLibrary::PrintString(SkeletalMesh,
 			//                                   FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
@@ -707,9 +715,8 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		}
 
 #if WITH_EDITOR
-		UE_LOG(LogKinanimParser, Warning, TEXT("%i"), Track.PosKeys.Num());
-		NewAnimSequence->GetController().AddBoneCurve(BoneName, false);
-		NewAnimSequence->GetController().SetBoneTrackKeys(BoneName,
+		AnimSequence->GetController().AddBoneCurve(BoneName, false);
+		AnimSequence->GetController().SetBoneTrackKeys(BoneName,
 		                                                  Track.PosKeys, Track.RotKeys, Track.ScaleKeys,
 		                                                  false);
 #else
@@ -718,23 +725,22 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	}
 
 #if WITH_EDITOR
-	NewAnimSequence->GetController().SetFrameRate(FrameRate, false);
-	NewAnimSequence->GetController().SetNumberOfFrames(FrameCount - 1);
-	NewAnimSequence->GetController().NotifyPopulated();
-	NewAnimSequence->GetController().CloseBracket(false);
+	AnimSequence->GetController().SetFrameRate(FrameRate, false);
+	AnimSequence->GetController().SetNumberOfFrames(FrameCount - 1);
+	AnimSequence->GetController().NotifyPopulated();
+	AnimSequence->GetController().CloseBracket(false);
 
 #else
-	NewAnimSequence->CompressedData.CompressedDataStructure = MakeUnique<FUECompressedAnimData>();
-	NewAnimSequence->CompressedData.CompressedDataStructure->CompressedNumberOfKeys = FrameCount;
-	NewAnimSequence->CompressedData.BoneCompressionCodec = CompressionCodec;
+	AnimSequence->CompressedData.CompressedDataStructure = MakeUnique<FUECompressedAnimData>();
+	AnimSequence->CompressedData.CompressedDataStructure->CompressedNumberOfKeys = FrameCount;
+	AnimSequence->CompressedData.BoneCompressionCodec = CompressionCodec;
 	UKinanimCurveCompressionCodec* AnimCurveCompressionCodec = NewObject<UKinanimCurveCompressionCodec>();
 	AnimCurveCompressionCodec->AnimSequence = AnimSequence;
-	NewAnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
-	// NewAnimSequence->PostLoad();
+	AnimSequence->CompressedData.CurveCompressionCodec = AnimCurveCompressionCodec;
+	// AnimSequence->PostLoad();
 #endif
 
 	BoneMapping = InBoneMapping;
-	AnimSequence = NewAnimSequence;
 	AnimSequence->AddToRoot();
 }
 
