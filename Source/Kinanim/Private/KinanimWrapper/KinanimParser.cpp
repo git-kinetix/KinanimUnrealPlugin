@@ -512,13 +512,13 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	AnimSequence->GetController().OpenBracket(FText::FromString("kinanimRuntime"), false);
 	AnimSequence->GetController().InitializeModel();
 #else
-	CompressionCodec = NewObject<UKinanimBoneCompressionCodec>(NewAnimSequence, TEXT("Kinanim"));
+	CompressionCodec = NewObject<UKinanimBoneCompressionCodec>(AnimSequence, TEXT("Kinanim"));
 	CompressionCodec->Tracks.AddDefaulted(BonesPoses.Num());
-	NewAnimSequence->CompressedData.CompressedTrackToSkeletonMapTable.AddDefaulted(BonesPoses.Num());
+	AnimSequence->CompressedData.CompressedTrackToSkeletonMapTable.AddDefaulted(BonesPoses.Num());
 
 	for (int BoneIndex = 0; BoneIndex < BonesPoses.Num(); ++BoneIndex)
 	{
-		NewAnimSequence->CompressedData.CompressedTrackToSkeletonMapTable[BoneIndex] = BoneIndex;
+		AnimSequence->CompressedData.CompressedTrackToSkeletonMapTable[BoneIndex] = BoneIndex;
 		for (int FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
 		{
 			CompressionCodec->Tracks[BoneIndex].PosKeys.Add(FVector3f(BonesPoses[BoneIndex].GetLocation()));
@@ -528,7 +528,7 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 	}
 	
 	CompressionCodec->AddToRoot();
-	NewAnimSequence->AddToRoot();
+	AnimSequence->AddToRoot();
 	
 #endif
 
@@ -546,10 +546,10 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 3
 #if WITH_EDITOR
 		FAnimationCurveIdentifier CurveId(MorphTargetName, ERawCurveTrackTypes::RCT_Float);
-		NewAnimSequence->GetController().AddCurve(CurveId);
+		AnimSequence->GetController().AddCurve(CurveId);
 		FRichCurve RichCurve;
 #else
-		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(NewAnimSequence->GetCurveData());
+		FRawCurveTracks& CurveTracks = const_cast<FRawCurveTracks&>(AnimSequence->GetCurveData());
 		int32 NewCurveIndex = CurveTracks.FloatCurves.Add(FFloatCurve(MorphTargetName, 0));
 		FFloatCurve* NewCurve = &CurveTracks.FloatCurves[NewCurveIndex];
 		FRichCurve& RichCurve = NewCurve->FloatCurve;
