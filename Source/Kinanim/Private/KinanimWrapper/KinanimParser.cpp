@@ -306,7 +306,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];
 
-		for (int32 j = MinFrameUncompressed; j <= MaxFrameUncompressed; j++)
+		for (int32 j = MinFrameUncompressed; j < MaxFrameUncompressed; j++)
 		{
 			FFrameData frame = data->Content->frames[j];
 			FTransformData trData = frame.Transforms[i];
@@ -395,12 +395,6 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		// CompressionCodec->Tracks[BoneIndex] = Track;
 #endif
 	}
-
-#if WITH_EDITOR
-	AnimSequence->GetController().CloseBracket(false);
-#else
-
-#endif
 
 	if (CurrentChunk >= ChunkCount)
 	{
