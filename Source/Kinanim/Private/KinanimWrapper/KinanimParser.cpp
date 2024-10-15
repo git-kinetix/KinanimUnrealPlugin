@@ -306,7 +306,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];
 
-		for (int32 j = MinFrameUncompressed; j <= MaxFrameUncompressed; j++)
+		for (int32 j = MinFrameUncompressed; j < MaxFrameUncompressed; j++)
 		{
 			FFrameData frame = data->Content->frames[j];
 			FTransformData trData = frame.Transforms[i];
@@ -383,27 +383,18 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 				                                                       MaxFrameUncompressed)),
 		                                                       Track.PosKeys,
 		                                                       Track.RotKeys,
-		                                                       Track.ScaleKeys, true))
+		                                                       Track.ScaleKeys, false))
 		{
 			UE_LOG(LogKinanimParser, Error,
 			       TEXT("Couldn't update bone track '%s' from frame %i to %i with length of %i"),
 			       *TrackName, MinFrameUncompressed, MaxFrameUncompressed, Track.PosKeys.Num());
-			continue;
 		}
-		// AnimSequence->GetController().NotifyPopulated();
-#else
-		// CompressionCodec->Tracks[BoneIndex] = Track;
 #endif
 	}
 
-#if WITH_EDITOR
-	AnimSequence->GetController().CloseBracket(false);
-#else
-
-#endif
-
 	if (CurrentChunk >= ChunkCount)
 	{
+		
 		Importer->ComputeUncompressedFrameSize(0, FrameCount - 1);
 		UncompressedHeader = Importer->GetUncompressedHeader();
 		FinalContent = Importer->GetResult()->Content;
@@ -606,8 +597,6 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 
 				FKeyHandle NewKeyHandle = RichCurve.AddKey(j / FrameRate.Numerator, frame.Blendshapes[i], false);
 
-				// UE_LOG(LogKinanimParser, Log, TEXT("Blendshape value: %f"), frame.Blendshapes[i]);
-
 				ERichCurveInterpMode NewInterpMode = RCIM_Linear;
 				ERichCurveTangentMode NewTangentMode = RCTM_Auto;
 				ERichCurveTangentWeightMode NewTangentWeightMode = RCTWM_WeightedNone;
@@ -718,6 +707,7 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		}
 
 #if WITH_EDITOR
+		UE_LOG(LogKinanimParser, Warning, TEXT("%i"), Track.PosKeys.Num());
 		NewAnimSequence->GetController().AddBoneCurve(BoneName, false);
 		NewAnimSequence->GetController().SetBoneTrackKeys(BoneName,
 		                                                  Track.PosKeys, Track.RotKeys, Track.ScaleKeys,
