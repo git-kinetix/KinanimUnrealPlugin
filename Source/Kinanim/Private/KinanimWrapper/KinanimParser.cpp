@@ -124,13 +124,6 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		|| !EHttpResponseCodes::IsOk(HttpResponse->GetResponseCode()))
 		return;
 
-	// FString StringResponse = HttpResponse->GetContentAsString();
-	// if (!StringResponse.IsEmpty())
-	// {
-	// 	UE_LOG(LogKinanimParser, Log, TEXT("OnRequestComplete(): received %s bytes from server"),
-	// 	       *StringResponse);
-	// }
-
 	const TArray<uint8> JsonContent = HttpResponse->GetContent();
 	UE_LOG(LogKinanimParser, Log, TEXT("OnRequestComplete(): received %d bytes from server"),
 	       JsonContent.Num());
@@ -380,7 +373,6 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		}
 
 #if WITH_EDITOR
-		UE_LOG(LogKinanimParser, Warning, TEXT("%i %i %i %i %i"),Track.PosKeys.Num(), Track.RotKeys.Num(), Track.ScaleKeys.Num(), MinFrameUncompressed, MaxFrameUncompressed);
 		if (!AnimSequence->GetController().UpdateBoneTrackKeys(BoneName,
 		                                                       FInt32Range(
 		                                                       	FInt32RangeBound::Inclusive(MinFrameUncompressed),
