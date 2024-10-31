@@ -28,6 +28,7 @@ public class Kinanim : ModuleRules
 			new string[]
 			{
 				"Core",
+				"glTFRuntime"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

@@ -10,7 +10,8 @@
 
 #include <Kinanim/Private/KinanimImporter.h>
 #include <Kinanim/Private/KinanimData.h>
-#include <Kinanim/Private/KinanimData.h>
+
+#include "gltfRuntimeParser.h"
 
 #include "KinanimParser.generated.h"
 
@@ -42,11 +43,14 @@ public:
 	void OnRequestComplete(
 		TSharedPtr<IHttpRequest> HttpRequest,
 		TSharedPtr<IHttpResponse> HttpResponse, bool bSuccess);
+	void SetupCurveRemapper(FglTFRuntimeAnimationCurveRemapper CurveRemapper);
 
 	FOnKinanimPlayAvailable OnKinanimPlayAvailable;
 	FOnKinanimDownloadComplete OnKinanimDownloadComplete;
-	
+
 	bool bBlendshapesEnabled;
+
+	FglTFRuntimeAnimationCurveRemapper CurveRemapper;
 
 	void* GetImporter() const;
 	void* GetUncompressedHeader() const;

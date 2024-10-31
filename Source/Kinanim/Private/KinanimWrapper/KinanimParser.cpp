@@ -289,6 +289,12 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 			TrackName = BoneMapping->GetBoneNameByIndex(static_cast<EKinanimTransform>(i));
 		}
 
+		if (CurveRemapper.IsBound())
+		{
+			FString Dummy;
+			TrackName = CurveRemapper.Execute(0, TrackName, Dummy, nullptr);
+		}
+		
 		FName BoneName = FName(TrackName);
 
 		FRawAnimSequenceTrack Track = FRawAnimSequenceTrack();
@@ -416,6 +422,11 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 	}
 
 	LoadBatchFrameKinanim();
+}
+
+void UKinanimDownloader::SetupCurveRemapper(FglTFRuntimeAnimationCurveRemapper InCurveRemapper)
+{
+	CurveRemapper = InCurveRemapper;
 }
 
 void* UKinanimDownloader::GetImporter() const
@@ -646,6 +657,12 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		else
 		{
 			TrackName = InBoneMapping->GetBoneNameByIndex(static_cast<EKinanimTransform>(i));
+		}
+
+		if (CurveRemapper.IsBound())
+		{
+			FString Dummy;
+			TrackName = CurveRemapper.Execute(0, TrackName, Dummy, nullptr);
 		}
 
 		FName BoneName = FName(TrackName);
