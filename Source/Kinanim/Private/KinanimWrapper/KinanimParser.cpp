@@ -644,7 +644,7 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 #endif
 		}
 	}
-
+	
 	//Iterate on bones
 	for (uint8 i = 0; i < static_cast<uint8>(EKinanimTransform::KT_Count); i++)
 	{
@@ -673,10 +673,6 @@ void UKinanimDownloader::SetupAnimSequence(USkeletalMesh* SkeletalMesh, const UK
 		int32 BoneIndex = AnimSequence->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(BoneName);
 		if (!AnimSequence->GetSkeleton()->GetReferenceSkeleton().IsValidIndex(BoneIndex))
 		{
-			// UKismetSystemLibrary::PrintString(SkeletalMesh,
-			//                                   FString::Printf(TEXT("Couldn't find bone '%s' (id: %d)"),
-			//                                                   *TrackName, static_cast<EKinanimTransform>(i)), true,
-			//                                   true, FLinearColor::Yellow);
 			continue;
 		}
 
