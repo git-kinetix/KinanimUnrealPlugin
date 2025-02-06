@@ -11,7 +11,7 @@
 #include <Kinanim/Private/KinanimImporter.h>
 #include <Kinanim/Private/KinanimData.h>
 
-#include "gltfRuntimeParser.h"
+#include "glTFRuntimeParser.h"
 
 #include "KinanimParser.generated.h"
 
