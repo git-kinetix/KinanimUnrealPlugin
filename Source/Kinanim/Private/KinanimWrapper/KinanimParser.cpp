@@ -310,7 +310,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		//Get T-Pose bone
 		FTransform BoneTransform = BonesPoses[BoneIndex];
 
-		for (int32 j = MinFrameUncompressed; j < MaxFrameUncompressed; j++)
+		for (int32 j = MinFrameUncompressed; j <= MaxFrameUncompressed; j++)
 		{
 			FFrameData frame = data->Content->frames[j];
 			FTransformData trData = frame.Transforms[i];
@@ -382,7 +382,7 @@ void UKinanimDownloader::OnRequestComplete(TSharedPtr<IHttpRequest> HttpRequest,
 		if (!AnimSequence->GetController().UpdateBoneTrackKeys(BoneName,
 		                                                       FInt32Range(
 		                                                       	FInt32RangeBound::Inclusive(MinFrameUncompressed),
-		                                                       	FInt32RangeBound::Inclusive(MaxFrameUncompressed -1)),
+		                                                       	FInt32RangeBound::Inclusive(MaxFrameUncompressed)),
 		                                                       Track.PosKeys,
 		                                                       Track.RotKeys,
 		                                                       Track.ScaleKeys, false))
