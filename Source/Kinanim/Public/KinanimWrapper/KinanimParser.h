@@ -24,7 +24,7 @@ DECLARE_DELEGATE_OneParam(FOnKinanimPlayAvailable, UKinanimDownloader*);
 class UKinanimBoneCompressionCodec;
 class UKinanimBonesDataAsset;
 
-#define SDKUSERAGENT TEXT("SDK-Unreal/0.6")
+#define SDKUSERAGENT TEXT("SDK-Unreal/0.8")
 
 
 UCLASS()
